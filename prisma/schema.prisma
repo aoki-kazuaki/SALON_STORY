@@ -1,0 +1,219 @@
+// =============================================================================
+// 美容院 Instagram空き状況画像ジェネレーター Prisma スキーマ (PostgreSQL)
+// 接続URLは Prisma 7 の仕様により prisma.config.ts 側で DATABASE_URL から読み込む
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// Enum
+// -----------------------------------------------------------------------------
+
+/// 管理者による承認ステータス (新規登録・PWリセット申請で共通利用)
+enum ApprovalStatus {
+  /// 承認待ち
+  PENDING
+  /// 承認済み
+  APPROVED
+  /// 却下
+  REJECTED
+}
+
+/// ユーザー権限
+enum UserRole {
+  /// 一般ユーザー (サロン運用者)
+  USER
+  /// 管理者 (新規登録・PWリセットの承認者)
+  ADMIN
+}
+
+// -----------------------------------------------------------------------------
+// BetterAuth 用テーブル (user / session / account / verification)
+// -----------------------------------------------------------------------------
+
+/// ユーザー (BetterAuth 標準 + username プラグイン + 承認制カスタム項目)
+model User {
+  id              String         @id
+  /// 表示名
+  name            String
+  /// メールアドレス
+  email           String         @unique
+  /// メールアドレス検証済みフラグ
+  emailVerified   Boolean        @default(false)
+  /// アイコン画像URL
+  image           String?
+  /// ログインID (BetterAuth username プラグイン)
+  username        String?        @unique
+  /// 表示用ログインID (BetterAuth username プラグイン)
+  displayUsername String?
+  /// ユーザー権限
+  role            UserRole       @default(USER)
+  /// 新規登録の承認ステータス (APPROVED のみログイン可能)
+  approvalStatus  ApprovalStatus @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  sessions              Session[]
+  accounts              Account[]
+  scheduleMemos         ScheduleMemo[]
+  backgroundSlots       BackgroundSlot[]
+  legendText            LegendText?
+  editorSetting         EditorSetting?
+  passwordResetRequests PasswordResetRequest[]
+
+  @@map("user")
+}
+
+/// ログインセッション (有効期限 30日 は lib/auth.ts 側で設定)
+model Session {
+  id        String   @id
+  /// セッション有効期限
+  expiresAt DateTime
+  /// セッショントークン (Cookie に格納)
+  token     String   @unique
+  /// 接続元IPアドレス
+  ipAddress String?
+  /// 接続元ユーザーエージェント
+  userAgent String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+/// 認証プロバイダアカウント (ID/PW ログインは providerId = "credential")
+model Account {
+  id                    String    @id
+  /// プロバイダ側のアカウントID
+  accountId             String
+  /// プロバイダ識別子
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  /// ハッシュ化済みパスワード (credential プロバイダのみ)
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+/// 検証トークン (PWリセットURL 等)
+model Verification {
+  id         String   @id
+  /// 検証対象の識別子
+  identifier String
+  /// トークン値
+  value      String
+  /// 有効期限
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+/// PWリセット申請 (管理者承認後にリセットURLを送付)
+model PasswordResetRequest {
+  id          String         @id @default(cuid())
+  userId      String
+  /// 承認ステータス
+  status      ApprovalStatus @default(PENDING)
+  /// 承認日時
+  approvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("password_reset_request")
+}
+
+// -----------------------------------------------------------------------------
+// アプリケーション用テーブル
+// -----------------------------------------------------------------------------
+
+/// スケジュールメモ (1ユーザー × 1日 = 1レコード)
+model ScheduleMemo {
+  id        String   @id @default(cuid())
+  userId    String
+  /// 対象日 (時刻なし)
+  date      DateTime @db.Date
+  /// メモ本文 (クリア時は空文字で更新)
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("schedule_memo")
+}
+
+/// 背景画像スロット (1〜5番の固定スロット、未登録スロットはレコードなし)
+model BackgroundSlot {
+  id          String   @id @default(cuid())
+  userId      String
+  /// スロット番号 (1〜5、アプリ側でバリデーション)
+  slotNumber  Int
+  /// S3 / MinIO 上のオブジェクトキー
+  objectKey   String
+  /// 画像の MIME タイプ
+  contentType String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slotNumber])
+  @@map("background_slot")
+}
+
+/// 凡例テキスト (ストーリーズ下部の凡例カード、1ユーザー1レコード)
+model LegendText {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  /// 凡例本文 (改行を含む)
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("legend_text")
+}
+
+/// エディタ設定 (選択中の背景スロット等、1ユーザー1レコード)
+model EditorSetting {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  /// 選択中の背景スロット番号 (未選択は null → スロット1へフォールバック)
+  selectedSlotNumber Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("editor_setting")
+}
