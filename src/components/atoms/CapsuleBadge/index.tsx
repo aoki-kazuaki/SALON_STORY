@@ -25,19 +25,19 @@ const CapsuleBadge = ({ label, markText, variant }: Props) => (
   <span
     data-variant={variant}
     className={cn(
-      "inline-flex w-full items-center gap-[2.4cqw] rounded-full py-[1.3cqw] pr-[3.6cqw] pl-[1.3cqw] shadow-md",
+      "inline-flex w-full items-center gap-[1.6cqw] rounded-full py-[1.3cqw] pr-[2.6cqw] pl-[1.3cqw] shadow-md",
       VARIANT_CLASS_NAMES[variant].pill,
     )}
   >
     <span
       className={cn(
-        "flex size-[7.2cqw] shrink-0 items-center justify-center rounded-full text-[3.2cqw] leading-none font-bold",
+        "flex size-[6.4cqw] shrink-0 items-center justify-center rounded-full text-[3cqw] leading-none font-bold",
         VARIANT_CLASS_NAMES[variant].mark,
       )}
     >
       {markText}
     </span>
-    <span className="truncate text-[4.2cqw] font-semibold tracking-wide">{label}</span>
+    <span className="truncate text-[3.6cqw] font-semibold">{label}</span>
   </span>
 );
 

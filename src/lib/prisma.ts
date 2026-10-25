@@ -1,0 +1,14 @@
+import { PrismaPg } from "@prisma/adapter-pg";
+
+import { PrismaClient } from "@/generated/prisma/client";
+
+/** 開発時のホットリロードで接続が増殖しないよう globalThis に保持する */
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | null };
+
+/** PostgreSQL ドライバアダプタ経由で Prisma Client を生成する */
+const createPrismaClient = (): PrismaClient =>
+  new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+
+export const prisma: PrismaClient = globalForPrisma.prisma ?? createPrismaClient();
+
+if (!(process.env.NODE_ENV === "production")) globalForPrisma.prisma = prisma;

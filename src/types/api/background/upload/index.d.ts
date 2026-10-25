@@ -1,18 +1,16 @@
-/** api/background/upload : 背景画像アップロード用 Presigned URL の発行 (新規・上書き共通) */
-import type { BackgroundSlot, BackgroundSlotNumber } from "@/types";
+/** api/background/upload : 背景画像のアップロード (新規・上書き共通、multipart/form-data でサーバー経由で S3 / MinIO へ保存) */
+import type { BackgroundSlot } from "@/types";
 
-/** POST リクエストボディ */
+/** POST リクエストボディ (FormData のフィールド) */
 export type ReqBodyBackgroundUpload = {
-  /** アップロード先スロット番号 */
-  slotNumber: BackgroundSlotNumber;
-  /** 画像の MIME タイプ (例: "image/jpeg") */
-  contentType: string;
+  /** アップロード先スロット番号 ("1"〜"5") */
+  slotNumber: string;
+  /** 画像ファイル (JPEG / PNG / WebP、10MB まで) */
+  file: File;
 };
 
 /** POST レスポンス */
 export type ResPostBackgroundUpload = {
-  /** PUT 送信先の署名付きURL */
-  uploadUrl: string;
-  /** 登録後のスロット情報 */
+  /** 登録後のスロット情報 (表示用の署名付きURLを含む) */
   slot: BackgroundSlot;
 };

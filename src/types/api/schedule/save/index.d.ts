@@ -3,7 +3,7 @@ import type { ApiErrorResponse, DateKey, ScheduleMemo } from "@/types";
 
 /** POST リクエストボディ */
 export type ReqBodyScheduleSave = {
-  /** 対象日 (過去日は不可) */
+  /** 対象日 (ダッシュボードからの新規入力は画面側で過去日を選択不可とする) */
   dateKey: DateKey;
   /** メモ本文 */
   content: string;

@@ -26,9 +26,6 @@ export const INITIAL_LEGEND_TEXT: LegendText = {
   updatedAt: null,
 };
 
-/** 期間指定で選択可能な日数プリセット (上限付き) */
-export const EDITOR_PERIOD_DAY_PRESETS: number[] = [7, 14, 21, 28];
-
 /** エディタ選択状態の初期値を生成する (Set を共有しないよう毎回新規生成) */
 export const createInitialEditorSelection = (): EditorSelection => ({
   rangeMode: "month",

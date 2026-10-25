@@ -103,6 +103,56 @@ export const dateFormatBadgeLabel = (dateKey: DateKey): string => {
 };
 
 /**
+ * 日付キーを "M/D" 形式に変換する
+ * @param dateKey "YYYY-MM-DD" 形式の日付キー
+ * @returns "M/D" 形式の文字列 (例: "10/25"、空文字・不正値の場合は "")
+ */
+export const dateFormatMonthDay = (dateKey: DateKey): string => {
+  if (dateKey === "") return "";
+  const parsed = dayjs(dateKey);
+  if (!parsed.isValid()) return "";
+  return parsed.format("M/D");
+};
+
+/**
+ * 日付キーを曜日1文字に変換する
+ * @param dateKey "YYYY-MM-DD" 形式の日付キー
+ * @returns 曜日 (例: "日"、空文字・不正値の場合は "")
+ */
+export const dateFormatWeekday = (dateKey: DateKey): string => {
+  if (dateKey === "") return "";
+  const parsed = dayjs(dateKey);
+  if (!parsed.isValid()) return "";
+  return WEEKDAY_LABELS[parsed.day()];
+};
+
+/**
+ * 日付キーに日数を加算する
+ * @param dateKey "YYYY-MM-DD" 形式の日付キー
+ * @param days 加算する日数 (負数で減算)
+ * @returns 加算後の日付キー (空文字・不正値の場合は "")
+ */
+export const dateAddDays = (dateKey: DateKey, days: number): DateKey => {
+  if (dateKey === "") return "";
+  const parsed = dayjs(dateKey);
+  if (!parsed.isValid()) return "";
+  return parsed.add(days, "day").format("YYYY-MM-DD");
+};
+
+/**
+ * メモ入力ダイアログの初期日付を決定する (直前入力日が今日以降ならそれを、未入力・過去日なら今日を返す)
+ * @param lastInputDateKey 直前に入力した日付 (未入力は "")
+ * @param todayKey 今日の日付キー
+ * @returns 初期表示する日付キー
+ */
+export const dateResolveMemoInputDefault = (lastInputDateKey: DateKey, todayKey: DateKey): DateKey => {
+  if (lastInputDateKey === "") return todayKey;
+  if (!dayjs(lastInputDateKey).isValid()) return todayKey;
+  if (lastInputDateKey < todayKey) return todayKey;
+  return lastInputDateKey;
+};
+
+/**
  * 月を英語略称＋季節絵文字の表示ラベルに変換する (登録データ一覧の月リスト用)
  * @param month 月 (1〜12)
  * @returns "Oct 🍁" 形式のラベル (範囲外の場合は "")

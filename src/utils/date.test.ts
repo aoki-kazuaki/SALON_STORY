@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UNIT_TEST_BASE_DATE_KEY, UNIT_TEST_BASE_DATE_TIME, UNIT_TEST_INVALID_DATE } from "@/constants/unitTest";
 
 import {
+  dateAddDays,
   dateCurrentTimeStamp,
+  dateFormatMonthDay,
+  dateFormatWeekday,
+  dateResolveMemoInputDefault,
   dateFormatBadgeLabel,
   dateFormatKey,
   dateFormatMonthLabel,
@@ -70,6 +74,33 @@ describe("dateFormatBadgeLabel", () => {
   it("空文字・不正値は空文字を返す", () => {
     expect(dateFormatBadgeLabel("")).toBe("");
     expect(dateFormatBadgeLabel(UNIT_TEST_INVALID_DATE)).toBe("");
+  });
+});
+
+describe("dateFormatMonthDay / dateFormatWeekday / dateAddDays", () => {
+  it("M/D 形式・曜日・日数加算を返す", () => {
+    expect(dateFormatMonthDay("2026-11-02")).toBe("11/2");
+    expect(dateFormatWeekday(UNIT_TEST_BASE_DATE_KEY)).toBe("日");
+    expect(dateAddDays("2026-10-30", 3)).toBe("2026-11-02");
+    expect(dateAddDays("2026-03-01", -1)).toBe("2026-02-28");
+  });
+
+  it("空文字・不正値は空文字を返す", () => {
+    expect(dateFormatMonthDay("")).toBe("");
+    expect(dateFormatWeekday(UNIT_TEST_INVALID_DATE)).toBe("");
+    expect(dateAddDays("", 1)).toBe("");
+  });
+});
+
+describe("dateResolveMemoInputDefault", () => {
+  it.each([
+    ["", UNIT_TEST_BASE_DATE_KEY],
+    ["2026-10-24", UNIT_TEST_BASE_DATE_KEY],
+    ["2026-10-25", "2026-10-25"],
+    ["2026-11-03", "2026-11-03"],
+    [UNIT_TEST_INVALID_DATE, UNIT_TEST_BASE_DATE_KEY],
+  ])("直前入力日 %s → %s", (lastInputDateKey, expected) => {
+    expect(dateResolveMemoInputDefault(lastInputDateKey, UNIT_TEST_BASE_DATE_KEY)).toBe(expected);
   });
 });
 

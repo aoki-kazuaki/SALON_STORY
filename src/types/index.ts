@@ -50,6 +50,54 @@ export type UserProfile = {
   createdAt: IsoDateTime;
 };
 
+/** 管理者画面に表示する承認待ちユーザー */
+export type PendingUser = {
+  /** ユーザーID */
+  id: string;
+  /** ログインID */
+  username: string;
+  /** メールアドレス */
+  email: string;
+  /** 登録日時 */
+  createdAt: IsoDateTime;
+};
+
+/** 管理者画面に表示する承認待ちPWリセット申請 */
+export type PendingPasswordReset = {
+  /** 申請ID */
+  id: string;
+  /** 申請者のログインID */
+  username: string;
+  /** 申請者のメールアドレス */
+  email: string;
+  /** 申請日時 */
+  createdAt: IsoDateTime;
+};
+
+/** ローカル送信箱に保存されたメール (SMTP 未設定のローカル環境のみ) */
+export type MailOutboxItem = {
+  /** 宛先 */
+  to: string;
+  /** 件名 */
+  subject: string;
+  /** 本文 */
+  text: string;
+  /** 送信日時 */
+  sentAt: IsoDateTime;
+};
+
+// -----------------------------------------------------------------------------
+// ナビゲーション
+// -----------------------------------------------------------------------------
+
+/** パンくずリスト1件分 */
+export type BreadcrumbItem = {
+  /** 表示ラベル */
+  label: string;
+  /** 遷移先パス */
+  href: string;
+};
+
 // -----------------------------------------------------------------------------
 // スケジュールメモ
 // -----------------------------------------------------------------------------
