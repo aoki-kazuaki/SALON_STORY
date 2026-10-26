@@ -40,6 +40,7 @@ const SettingsPasswordForm = ({ onSuccess }: Props) => {
     register,
     handleSubmit,
     setError,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<PasswordChangeFormValues>({
     resolver: zodResolver(schemaPasswordChangeForm),
@@ -66,6 +67,8 @@ const SettingsPasswordForm = ({ onSuccess }: Props) => {
       toast.error(authErrorMessage(error, "パスワードの変更に失敗しました。時間をおいて再度お試しください"));
       return;
     }
+    // 再度この画面を開いたときにパスワードが残らないよう空にする (Next.js の Activity 対策)
+    reset();
     onSuccess("パスワードを変更しました");
   };
 

@@ -18,9 +18,13 @@ import { schemaRegisterForm } from "@/lib/schemas";
 /** 新規登録フォームの値 */
 type RegisterFormValues = z.infer<typeof schemaRegisterForm>;
 
-/** 新規登録で重複時に表示するメッセージ (メールアドレスはパスワードリセットへ誘導する) */
-const EMAIL_TAKEN_MESSAGE =
-  "このメールアドレスは既に登録されています。パスワードをお忘れの場合はログイン画面からリセットを申請してください";
+/**
+ * 登録済みのメールアドレスで登録しようとした場合のメッセージ
+ * - BetterAuth は登録済みかどうかを推測されないよう、重複時も「登録成功」と同じ応答を返す (実際には作成されない)
+ * - そのため登録済みとは断定せず、ログイン・パスワード再設定へ案内する
+ */
+const EMAIL_MAYBE_TAKEN_MESSAGE =
+  "登録を完了できませんでした。このメールアドレスで登録済みの場合は、ログインするか、パスワードの再設定を申請してください";
 
 /** エラーを表示する入力欄ごとの、BetterAuth のエラーコード別文言 (該当しないコードはフォーム下部に表示) */
 const SIGN_UP_FIELD_ERRORS: Record<string, { field: keyof RegisterFormValues; message: string }> = {
@@ -28,8 +32,8 @@ const SIGN_UP_FIELD_ERRORS: Record<string, { field: keyof RegisterFormValues; me
   USERNAME_TOO_SHORT: { field: "username", message: AUTH_MESSAGES_BY_CODE.USERNAME_TOO_SHORT },
   USERNAME_TOO_LONG: { field: "username", message: AUTH_MESSAGES_BY_CODE.USERNAME_TOO_LONG },
   INVALID_USERNAME: { field: "username", message: AUTH_MESSAGES_BY_CODE.INVALID_USERNAME },
-  USER_ALREADY_EXISTS: { field: "email", message: EMAIL_TAKEN_MESSAGE },
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: { field: "email", message: EMAIL_TAKEN_MESSAGE },
+  USER_ALREADY_EXISTS: { field: "email", message: EMAIL_MAYBE_TAKEN_MESSAGE },
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: { field: "email", message: EMAIL_MAYBE_TAKEN_MESSAGE },
   INVALID_EMAIL: { field: "email", message: AUTH_MESSAGES_BY_CODE.INVALID_EMAIL },
   WEAK_PASSWORD: { field: "password", message: AUTH_MESSAGES_BY_CODE.WEAK_PASSWORD },
   PASSWORD_TOO_SHORT: { field: "password", message: AUTH_MESSAGES_BY_CODE.PASSWORD_TOO_SHORT },
@@ -48,6 +52,7 @@ const RegisterForm = () => {
     register,
     handleSubmit,
     setError,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(schemaRegisterForm),
@@ -77,6 +82,13 @@ const RegisterForm = () => {
     const signInError = await authCall(() =>
       authClient.signIn.username({ username: values.username, password: values.password }),
     );
+    // 登録直後のIDとパスワードでログインできない = 登録済みメールアドレスのため実際には作成されていない
+    if (signInError?.code === "INVALID_USERNAME_OR_PASSWORD") {
+      setError("email", { message: EMAIL_MAYBE_TAKEN_MESSAGE }, { shouldFocus: true });
+      return;
+    }
+    // 登録できた場合は、画面を離れても入力値 (パスワード) が残らないよう空にする (Next.js の Activity 対策)
+    reset();
     if (signInError?.code === AUTH_ERROR_CODE_APPROVAL_PENDING) {
       router.replace("/register/pending");
       return;

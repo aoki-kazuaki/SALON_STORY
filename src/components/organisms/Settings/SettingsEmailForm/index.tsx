@@ -33,6 +33,7 @@ const SettingsEmailForm = ({ currentEmail, onSuccess }: Props) => {
     register,
     handleSubmit,
     setError,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<EmailChangeFormValues>({ resolver: zodResolver(schemaEmailChangeForm), defaultValues: { email: "" } });
 
@@ -49,6 +50,7 @@ const SettingsEmailForm = ({ currentEmail, onSuccess }: Props) => {
       toast.error(result.error.message);
       return;
     }
+    reset();
     onSuccess("メールアドレスを変更しました");
   };
 

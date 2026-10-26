@@ -56,6 +56,7 @@ const LoginForm = ({ redirectPath }: Props) => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(schemaLoginForm),
@@ -73,6 +74,8 @@ const LoginForm = ({ redirectPath }: Props) => {
       setSubmitError(authErrorMessage(error, AUTH_MESSAGE_INVALID_CREDENTIALS, LOGIN_MESSAGES_BY_CODE));
       return;
     }
+    // 離れた画面も非表示のまま状態が保持されるため (Next.js の Activity)、ログアウト後に入力値が残らないよう空にする
+    reset();
     /** 遷移先がダッシュボード配下 (オープンリダイレクト対策) かどうかの判定フラグ */
     const isSafeRedirect: boolean = redirectPath.startsWith(DEFAULT_REDIRECT_PATH);
     if (!isSafeRedirect) {
