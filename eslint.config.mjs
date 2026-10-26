@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "src/generated/**",
     "storybook-static/**",
     ".next-e2e/**",
+    "coverage/**",
     "e2e/report/**",
     "e2e/results/**",
   ]),
