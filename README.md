@@ -30,6 +30,15 @@ npm run dev          # http://localhost:3000 で起動
 `SMTP_HOST` が空の場合、メールは送信されず **管理者メニューの「ローカル送信メール」** とサーバーログに表示されます。
 パスワード再設定 URL もここから開けます。
 
+## ローカルでパスワードを忘れたとき
+
+```bash
+npm run user:reset-password -- <ログインIDまたはメールアドレス>             # ルールを満たす乱数PWを生成して表示
+npm run user:reset-password -- <ログインIDまたはメールアドレス> NewPass123  # 任意のPWを指定
+```
+
+DB を直接書き換えるため、管理者承認やメール送信は経由しません (`DATABASE_URL` の DB が対象。本番 DB には使わないでください)。
+
 ## 本番デプロイ (無料枠中心の構成)
 
 | 役割 | サービス | 備考 |
@@ -54,6 +63,7 @@ npm run dev          # http://localhost:3000 で起動
 | `npm run storybook` | コンポーネントカタログ (http://localhost:6006) |
 | `npm run lint` / `npm run typecheck` | ESLint / 型チェック |
 | `npm run db:studio` | DB の中身をブラウザで確認 (Prisma Studio) |
+| `npm run user:reset-password -- <ID>` | ローカルDBのユーザーのパスワードを再設定 |
 | `npm run db:migrate` | `prisma/schema.prisma` 変更後のマイグレーション作成 |
 | `npm run db:down` | PostgreSQL・MinIO を停止 (データは保持) |
 

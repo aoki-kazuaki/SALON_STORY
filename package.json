@@ -21,6 +21,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
+    "user:reset-password": "tsx scripts/reset-password.ts",
     "setup": "docker compose up -d --wait && prisma migrate deploy",
     "postinstall": "prisma generate",
     "prepare": "husky"
