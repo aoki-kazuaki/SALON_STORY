@@ -137,8 +137,8 @@ export type ScheduleOperationBadge = "NEW" | "UPDATED" | "";
 // 背景画像
 // -----------------------------------------------------------------------------
 
-/** 背景画像スロット番号 (1〜5 の固定スロット) */
-export type BackgroundSlotNumber = 1 | 2 | 3 | 4 | 5;
+/** 背景画像スロット番号 (1〜4 の固定スロット) */
+export type BackgroundSlotNumber = 1 | 2 | 3 | 4;
 
 /** 背景画像スロット */
 export type BackgroundSlot = {

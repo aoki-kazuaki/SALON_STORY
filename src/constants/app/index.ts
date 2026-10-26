@@ -3,7 +3,7 @@ import type { CBadgeTone } from "@/components/atoms/CBadge";
 import type { BackgroundSlotNumber, ScheduleOperationBadge } from "@/types";
 
 /** 背景画像の固定スロット番号一覧 */
-export const BACKGROUND_SLOT_NUMBERS: BackgroundSlotNumber[] = [1, 2, 3, 4, 5];
+export const BACKGROUND_SLOT_NUMBERS: BackgroundSlotNumber[] = [1, 2, 3, 4];
 
 /** 背景画像として受け付ける MIME タイプ */
 export const BACKGROUND_ACCEPT_CONTENT_TYPES: string[] = ["image/jpeg", "image/png", "image/webp"];

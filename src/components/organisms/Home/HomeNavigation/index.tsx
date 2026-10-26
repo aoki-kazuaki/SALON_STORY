@@ -30,7 +30,7 @@ const NAVIGATION_ITEMS: NavigationItem[] = [
   {
     href: "/dashboard/backgrounds",
     label: "背景画像管理",
-    description: "ストーリーズの背景を最大5枚まで登録",
+    description: "ストーリーズの背景を最大4枚まで登録",
     icon: ImagesIcon,
   },
 ];

@@ -28,7 +28,7 @@ const dateKeySchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "日付を選択してください")
   .refine((value) => dayjs(value).format("YYYY-MM-DD") === value, "存在しない日付です");
 
-/** 背景スロット番号 (1〜5) */
+/** 背景スロット番号 (1〜4) */
 const slotNumberSchema = z.number().int().min(1).max(BACKGROUND_SLOT_NUMBERS.length);
 
 /** スケジュールメモ本文 (空文字可、最大3行・1行15文字まで。空行・前後の空白は数えない) */

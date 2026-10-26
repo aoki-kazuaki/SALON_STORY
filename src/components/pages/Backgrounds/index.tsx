@@ -13,7 +13,7 @@ import { apiGet } from "@/lib/api/client";
 import type { BackgroundSlot, BackgroundSlotNumber } from "@/types";
 import type { ResGetBackgroundList } from "@/types/api/background/list";
 
-/** 背景画像管理 (1〜5番の固定スロット) */
+/** 背景画像管理 (1〜4番の固定スロット) */
 const BackgroundsPage = () => {
   const [slots, setSlots] = useState<BackgroundSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,7 +41,7 @@ const BackgroundsPage = () => {
   return (
     <DashboardPageLayout
       title="背景画像管理"
-      description="ストーリーズの背景を最大5枚登録できます (JPEG / PNG / WebP、縦長 9:16 推奨。アップロード時に自動で軽量化されます)。"
+      description="ストーリーズの背景を最大4枚登録できます (JPEG / PNG / WebP、縦長 9:16 推奨。アップロード時に自動で軽量化されます)。"
       footer={
         <CButton asChild variant="outline">
           <Link href="/dashboard/editor">

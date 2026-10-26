@@ -171,11 +171,11 @@ model ScheduleMemo {
   @@map("schedule_memo")
 }
 
-/// 背景画像スロット (1〜5番の固定スロット、未登録スロットはレコードなし)
+/// 背景画像スロット (1〜4番の固定スロット、未登録スロットはレコードなし)
 model BackgroundSlot {
   id          String   @id @default(cuid())
   userId      String
-  /// スロット番号 (1〜5、アプリ側でバリデーション)
+  /// スロット番号 (1〜4、アプリ側でバリデーション)
   slotNumber  Int
   /// S3 / MinIO 上のオブジェクトキー
   objectKey   String
