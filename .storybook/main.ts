@@ -1,6 +1,6 @@
+import type { StorybookConfig } from "@storybook/react-vite";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
-import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
   stories: ["../src/components/**/*.stories.@(ts|tsx)"],

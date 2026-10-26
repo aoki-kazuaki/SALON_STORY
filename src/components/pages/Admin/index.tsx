@@ -8,9 +8,9 @@ import AdminOutbox from "@/components/organisms/Admin/AdminOutbox";
 import DashboardPageLayout from "@/components/template/DashboardPageLayout";
 import { apiGet, apiPost } from "@/lib/api/client";
 import type { MailOutboxItem, PendingPasswordReset, PendingUser } from "@/types";
-import type { ResGetAdminPending } from "@/types/api/admin/pending";
 import type { ResPostAdminApproveReset } from "@/types/api/admin/approve-reset";
 import type { ResPostAdminApproveUser } from "@/types/api/admin/approve-user";
+import type { ResGetAdminPending } from "@/types/api/admin/pending";
 import { dateCurrentTimeStamp } from "@/utils/date";
 
 /** 管理者メニュー (新規登録・PWリセット申請の承認) */

@@ -1,6 +1,6 @@
 "use client";
 
-import { PencilIcon, PlusIcon, EraserIcon } from "lucide-react";
+import { EraserIcon, PencilIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

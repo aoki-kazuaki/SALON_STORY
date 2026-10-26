@@ -2,6 +2,13 @@ import dayjs from "dayjs";
 import { z } from "zod";
 
 import {
+  BACKGROUND_SLOT_NUMBERS,
+  LEGEND_MAX_LENGTH,
+  SCHEDULE_MEMO_MAX_LENGTH,
+  SCHEDULE_MEMO_MAX_LINE_LENGTH,
+  SCHEDULE_MEMO_MAX_LINES,
+} from "@/constants/app";
+import {
   AUTH_PASSWORD_MAX_LENGTH,
   AUTH_PASSWORD_MIN_LENGTH,
   AUTH_PASSWORD_PATTERN,
@@ -9,13 +16,6 @@ import {
   AUTH_USERNAME_MAX_LENGTH,
   AUTH_USERNAME_MIN_LENGTH,
 } from "@/constants/auth";
-import {
-  BACKGROUND_SLOT_NUMBERS,
-  LEGEND_MAX_LENGTH,
-  SCHEDULE_MEMO_MAX_LENGTH,
-  SCHEDULE_MEMO_MAX_LINE_LENGTH,
-  SCHEDULE_MEMO_MAX_LINES,
-} from "@/constants/app";
 import { arraySplitLines } from "@/utils/array";
 
 // -----------------------------------------------------------------------------

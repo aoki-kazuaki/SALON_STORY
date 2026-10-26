@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import { cn } from "@/lib/shadcn/utils";
 import { Switch as SwitchPrimitive } from "radix-ui";
+import * as React from "react";
 
 function Switch({
   className,
