@@ -30,6 +30,21 @@ npm run dev          # http://localhost:3000 で起動
 `SMTP_HOST` が空の場合、メールは送信されず **管理者メニューの「ローカル送信メール」** とサーバーログに表示されます。
 パスワード再設定 URL もここから開けます。
 
+## 本番デプロイ (無料枠中心の構成)
+
+| 役割 | サービス | 備考 |
+| --- | --- | --- |
+| ホスティング | Vercel (Hobby) | Hobby プランは非商用利用のみ。実店舗で運用する場合は Pro が必要 |
+| DB | Neon (Free) | Vercel Marketplace から作成すると環境変数が自動連携される |
+| 画像 | AWS S3 | 背景画像は最大5枚 × 約1MB (アップロード時に自動圧縮) のため、無料枠終了後も月数円程度 |
+| メール | Gmail SMTP | 2段階認証を有効にして「アプリ パスワード」を発行 |
+
+1. Neon でプロジェクトを作成し、Pooled / Direct の接続URLを `DATABASE_URL` / `DIRECT_DATABASE_URL` に設定します。
+2. S3 バケット (パブリックアクセスはブロックのまま) と、そのバケットへの `s3:PutObject` / `s3:GetObject` / `s3:DeleteObject` のみ許可した IAM ユーザーを作成し、アクセスキーを設定します (`S3_ENDPOINT` は空)。
+3. `.env.example` の「本番」コメントに従い、Vercel の Environment Variables に全項目を設定します (`AUTH_SKIP_APPROVAL="false"`)。
+4. Vercel にデプロイすると `vercel-build` スクリプトでマイグレーション (`prisma migrate deploy`) → ビルドが実行されます。
+5. 本番で**最初に登録したユーザーが管理者**になり、承認依頼メールは管理者のメールアドレス宛てに届きます。
+
 ## 主なコマンド
 
 | コマンド | 内容 |

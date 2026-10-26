@@ -25,9 +25,12 @@ const mailSend = async (to: string, subject: string, text: string): Promise<void
     console.info(`[mail:local] to=${to} subject=${subject}\n${text}`);
     return;
   }
+  const port = Number(process.env.SMTP_PORT ?? "587");
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? "587"),
+    port,
+    // 465 は接続時から TLS (SMTPS)、587 は STARTTLS で暗号化する
+    secure: port === 465,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
   });
   await transporter.sendMail({ from: process.env.MAIL_FROM, to, subject, text });
