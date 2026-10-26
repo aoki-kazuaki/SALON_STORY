@@ -46,8 +46,18 @@ jobs:
       - name: TypeScript
         run: npm run typecheck
 
-      - name: Vitest
-        run: npm test
+      # 単体テストの実行と、カバレッジ 90% 未満での失敗 (基準は vitest.config.mts の coverage.thresholds)
+      - name: Vitest (カバレッジ 90% 以上)
+        run: npm run test:coverage
+
+      # どの行がテストされていないかを確認できるよう、カバレッジの HTML レポートを成果物として保存する (失敗時も保存)
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
 
       - name: Build
         run: npm run build
