@@ -6,11 +6,16 @@ import { toast } from "sonner";
 
 import CButton from "@/components/atoms/CButton";
 import CConfirmDialog from "@/components/molecules/CConfirmDialog";
-import { BACKGROUND_ACCEPT_CONTENT_TYPES, BACKGROUND_MAX_FILE_BYTES } from "@/constants/app";
+import {
+  BACKGROUND_ACCEPT_CONTENT_TYPES,
+  BACKGROUND_MAX_FILE_BYTES,
+  BACKGROUND_SOURCE_MAX_FILE_BYTES,
+} from "@/constants/app";
 import { apiDelete, apiPostForm } from "@/lib/api/client";
 import type { BackgroundSlot, BackgroundSlotNumber } from "@/types";
 import type { ResDeleteBackgroundDelete } from "@/types/api/background/delete";
 import type { ResPostBackgroundUpload } from "@/types/api/background/upload";
+import { blobCompressBackgroundImage } from "@/utils/blob";
 
 /** BackgroundsSlotCard の Props */
 type Props = {
@@ -22,10 +27,20 @@ type Props = {
   onChanged: (slotNumber: BackgroundSlotNumber, slot: BackgroundSlot | null) => void;
 };
 
+/** 画像を圧縮する (読み込めない画像の場合は null) */
+const compressOrNull = async (file: File): Promise<File | null> => {
+  try {
+    return await blobCompressBackgroundImage(file);
+  } catch {
+    return null;
+  }
+};
+
 /**
  * 背景画像スロット1枠分のカード
  * - 登録済み: 9:16 サムネイル ＋ 上書き変更・削除 (S3 / MinIO から物理削除)
  * - 未登録: 点線枠 ＋ アップロードボタン
+ * - アップロード前にブラウザ側で長辺 1920px・約1MB の JPEG に圧縮する (通信量・ストレージ料金の削減)
  */
 const BackgroundsSlotCard = ({ slotNumber, slot, onChanged }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,18 +54,30 @@ const BackgroundsSlotCard = ({ slotNumber, slot, onChanged }: Props) => {
     event.target.value = "";
     if (!file) return;
     if (!BACKGROUND_ACCEPT_CONTENT_TYPES.includes(file.type)) {
-      toast.error("JPEG / PNG / WebP の画像を選択してください");
+      toast.error("この形式の画像は登録できません。JPEG / PNG / WebP の画像を選択してください");
       return;
     }
-    if (file.size > BACKGROUND_MAX_FILE_BYTES) {
-      toast.error("10MB 以下の画像を選択してください");
+    if (file.size > BACKGROUND_SOURCE_MAX_FILE_BYTES) {
+      toast.error("画像のファイルサイズが大きすぎます (30MB まで)。別の画像を選択してください");
+      return;
+    }
+
+    setIsUploading(true);
+    const compressed = await compressOrNull(file);
+    if (!compressed) {
+      setIsUploading(false);
+      toast.error("画像を読み込めませんでした。画像が破損していないか確認し、別の画像でお試しください");
+      return;
+    }
+    if (compressed.size > BACKGROUND_MAX_FILE_BYTES) {
+      setIsUploading(false);
+      toast.error("画像を十分に圧縮できませんでした。別の画像を選択してください");
       return;
     }
 
     const formData = new FormData();
     formData.append("slotNumber", String(slotNumber));
-    formData.append("file", file);
-    setIsUploading(true);
+    formData.append("file", compressed);
     const result = await apiPostForm<ResPostBackgroundUpload>("/api/background/upload", formData);
     setIsUploading(false);
     if (!result.ok) {

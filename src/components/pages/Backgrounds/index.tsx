@@ -41,7 +41,7 @@ const BackgroundsPage = () => {
   return (
     <DashboardPageLayout
       title="背景画像管理"
-      description="ストーリーズの背景を最大5枚登録できます (JPEG / PNG / WebP・10MBまで、縦長 9:16 推奨)。"
+      description="ストーリーズの背景を最大5枚登録できます (JPEG / PNG / WebP、縦長 9:16 推奨。アップロード時に自動で軽量化されます)。"
       footer={
         <CButton asChild variant="outline">
           <Link href="/dashboard/editor">

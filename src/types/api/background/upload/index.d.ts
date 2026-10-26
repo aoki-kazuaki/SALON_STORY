@@ -5,7 +5,7 @@ import type { BackgroundSlot } from "@/types";
 export type ReqBodyBackgroundUpload = {
   /** アップロード先スロット番号 ("1"〜"5") */
   slotNumber: string;
-  /** 画像ファイル (JPEG / PNG / WebP、10MB まで) */
+  /** 画像ファイル (JPEG / PNG / WebP、4MB まで) */
   file: File;
 };
 

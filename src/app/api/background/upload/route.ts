@@ -31,10 +31,18 @@ export async function POST(request: Request) {
   const file = formData.get("file");
   if (!(file instanceof File)) return apiBadRequestResponse();
   if (!BACKGROUND_ACCEPT_CONTENT_TYPES.includes(file.type)) {
-    return apiErrorResponse(400, "INVALID_FILE_TYPE", "JPEG / PNG / WebP の画像を選択してください");
+    return apiErrorResponse(
+      400,
+      "INVALID_FILE_TYPE",
+      "この形式の画像は登録できません。JPEG / PNG / WebP の画像を選択してください",
+    );
   }
   if (file.size > BACKGROUND_MAX_FILE_BYTES) {
-    return apiErrorResponse(400, "FILE_TOO_LARGE", "10MB 以下の画像を選択してください");
+    return apiErrorResponse(
+      400,
+      "FILE_TOO_LARGE",
+      "画像のファイルサイズが大きすぎます (4MB まで)。別の画像を選択してください",
+    );
   }
 
   // 同一キーの上書きはブラウザキャッシュで旧画像が残るため、アップロードごとに新しいキーを発行する
