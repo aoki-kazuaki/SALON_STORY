@@ -1,9 +1,21 @@
 name: CI
 
+# main / develop への PR とマージ後に、品質チェック (Lint・型・テスト・ビルド・ライセンス) を行う
+# 脆弱性チェックは security.yml で行う
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+# 同じ PR に新しいコミットが push されたら、古いコミット向けの実行をキャンセルする (結果は最新のコミットのものだけが使われるため)
+# main / develop への push と定期実行はキャンセルせず、コミットごとの結果を残す
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -34,14 +46,21 @@ jobs:
       - name: TypeScript
         run: npm run typecheck
 
-      - name: Vitest
-        run: npm test
+      # 単体テストの実行と、カバレッジ 90% 未満での失敗 (基準は vitest.config.mts の coverage.thresholds)
+      - name: Vitest (カバレッジ 90% 以上)
+        run: npm run test:coverage
+
+      # どの行がテストされていないかを確認できるよう、カバレッジの HTML レポートを成果物として保存する (失敗時も保存)
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
 
       - name: Build
         run: npm run build
 
-      - name: npm audit
-        run: npm audit --audit-level=high
-
-      - name: License check (商用利用不可ライセンスの検出)
+      - name: License check (ソースコード公開などの義務を伴うライセンスの検出)
         run: npm run license:check

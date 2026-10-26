@@ -25,6 +25,13 @@ export default defineConfig({
       exclude: ["**/*.test.{ts,tsx}", "**/*.stories.tsx"],
       reporter: ["text", "html"],
       reportsDirectory: "./coverage",
+      // いずれかが 90% を下回ると失敗する (CI でマージを止める基準)
+      thresholds: {
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
+      },
     },
   },
 });
