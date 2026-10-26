@@ -1,0 +1,48 @@
+# Dependabot: 依存ライブラリ・GitHub Actions の更新 PR を毎週自動で作成する
+# - 作成された PR にも CI / Security ワークフローが走るため、テスト・脆弱性チェックに通ったものだけマージする
+# - 既知の脆弱性に対する緊急の更新 PR は、リポジトリ設定の「Dependabot security updates」で随時作成される
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    # 公開直後のバージョンは取り込まない (乗っ取られたパッケージの悪意ある版を掴むリスクを下げる)
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore(deps)"
+    # 一緒に更新しないと動かないものはまとめる (上から順に最初に一致したグループに入る)
+    groups:
+      next:
+        patterns: ["next", "eslint-config-next", "@next/*"]
+      prisma:
+        patterns: ["prisma", "@prisma/*"]
+      storybook:
+        patterns: ["storybook", "@storybook/*"]
+      testing:
+        patterns: ["vitest", "@vitest/*", "@playwright/test", "@testing-library/*", "jsdom"]
+      # 上記以外のマイナー・パッチ更新は1つの PR にまとめる (メジャー更新は破壊的変更があり得るため個別の PR)
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      github-actions:
+        patterns: ["*"]

@@ -1,9 +1,15 @@
 name: CI
 
+# main / develop への PR とマージ後に、品質チェック (Lint・型・テスト・ビルド・ライセンス) を行う
+# 脆弱性チェックは security.yml で行う
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
 
 jobs:
   quality:
@@ -40,8 +46,5 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: npm audit
-        run: npm audit --audit-level=high
-
-      - name: License check (商用利用不可ライセンスの検出)
+      - name: License check (ソースコード公開などの義務を伴うライセンスの検出)
         run: npm run license:check

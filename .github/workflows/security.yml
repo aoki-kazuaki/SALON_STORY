@@ -1,0 +1,77 @@
+# 脆弱性チェック (依存ライブラリ・コード)
+# - main / develop への PR で実行し、深刻度 High 以上の問題があれば失敗させる
+#   (リポジトリ設定の Rulesets で必須チェックに指定すると、失敗時はマージできなくなる)
+# - 既存コードに新しく脆弱性が公表された場合に気付けるよう、毎週月曜にも実行する
+name: Security
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 0 * * 1" # 毎週月曜 9:00 (JST)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # 依存ライブラリ全体 (package-lock.json) の既知の脆弱性
+  npm-audit:
+    name: npm-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # package-lock.json だけで判定できるため npm ci は不要
+      - name: npm audit (High 以上で失敗)
+        run: npm audit --audit-level=high
+
+  # PR で追加・更新される依存ライブラリの脆弱性 (PR の差分だけを判定し、結果を PR にコメント)
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+
+  # アプリのコードの脆弱性 (XSS・インジェクション・オープンリダイレクト等の静的解析)
+  codeql:
+    name: codeql
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          # 標準より検出範囲の広いセキュリティ向けルールセット
+          queries: security-extended
+
+      # 結果は GitHub の Security タブ (Code scanning) にも登録される
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"
+          output: sarif-results
+
+      # CodeQL 自体は検出があっても失敗しないため、深刻度 High 以上 (security-severity 7.0 以上) があれば失敗させる
+      - name: High 以上の検出があれば失敗
+        run: node .github/scripts/codeql-gate.mjs sarif-results
