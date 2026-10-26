@@ -10,8 +10,14 @@ export const BACKGROUND_ACCEPT_CONTENT_TYPES: string[] = ["image/jpeg", "image/p
 /** 背景画像の最大ファイルサイズ (10MB) */
 export const BACKGROUND_MAX_FILE_BYTES: number = 10 * 1024 * 1024;
 
-/** スケジュールメモ本文の最大文字数 */
-export const SCHEDULE_MEMO_MAX_LENGTH: number = 200;
+/** スケジュールメモの最大行数 (ストーリーズで多数の日付を1画面に収めるための上限) */
+export const SCHEDULE_MEMO_MAX_LINES: number = 3;
+
+/** スケジュールメモ1行あたりの最大文字数 (例: "16:00〜 カットのみ" は11文字) */
+export const SCHEDULE_MEMO_MAX_LINE_LENGTH: number = 15;
+
+/** スケジュールメモ本文全体の最大文字数 (改行・前後の空白を含めた入力欄の上限) */
+export const SCHEDULE_MEMO_MAX_LENGTH: number = 60;
 
 /** 凡例テキストの最大文字数 */
 export const LEGEND_MAX_LENGTH: number = 500;
@@ -24,6 +30,3 @@ export const EDITOR_PERIOD_DAY_PRESETS: number[] = [7, 14, 21, 28];
 
 /** トースト通知の表示時間 (ミリ秒) */
 export const TOAST_DURATION_MS: number = 2000;
-
-/** ストーリーズキャンバスの小見出し */
-export const STORY_CANVAS_SUB_TITLE: string = "AVAILABLE";

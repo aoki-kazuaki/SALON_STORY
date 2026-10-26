@@ -2,7 +2,14 @@ import dayjs from "dayjs";
 import { z } from "zod";
 
 import { AUTH_PASSWORD_MIN_LENGTH, AUTH_USERNAME_MIN_LENGTH } from "@/constants/auth";
-import { BACKGROUND_SLOT_NUMBERS, LEGEND_MAX_LENGTH, SCHEDULE_MEMO_MAX_LENGTH } from "@/constants/app";
+import {
+  BACKGROUND_SLOT_NUMBERS,
+  LEGEND_MAX_LENGTH,
+  SCHEDULE_MEMO_MAX_LENGTH,
+  SCHEDULE_MEMO_MAX_LINE_LENGTH,
+  SCHEDULE_MEMO_MAX_LINES,
+} from "@/constants/app";
+import { arraySplitLines } from "@/utils/array";
 
 // -----------------------------------------------------------------------------
 // 共通パーツ
@@ -16,6 +23,19 @@ const dateKeySchema = z
 
 /** 背景スロット番号 (1〜5) */
 const slotNumberSchema = z.number().int().min(1).max(BACKGROUND_SLOT_NUMBERS.length);
+
+/** スケジュールメモ本文 (空文字可、最大3行・1行15文字まで。空行・前後の空白は数えない) */
+const memoContentSchema = z
+  .string()
+  .max(SCHEDULE_MEMO_MAX_LENGTH, `${SCHEDULE_MEMO_MAX_LENGTH}文字以内で入力してください`)
+  .refine(
+    (value) => arraySplitLines(value).length <= SCHEDULE_MEMO_MAX_LINES,
+    `${SCHEDULE_MEMO_MAX_LINES}行以内で入力してください`,
+  )
+  .refine(
+    (value) => arraySplitLines(value).every((line) => line.length <= SCHEDULE_MEMO_MAX_LINE_LENGTH),
+    `1行${SCHEDULE_MEMO_MAX_LINE_LENGTH}文字以内で入力してください`,
+  );
 
 /** メールアドレス */
 const emailSchema = z.email("メールアドレスの形式が正しくありません");
@@ -35,7 +55,7 @@ export const schemaScheduleListParams = z.object({ startDate: dateKeySchema, end
 /** api/schedule/save の POST ボディ */
 export const schemaScheduleSaveBody = z.object({
   dateKey: dateKeySchema,
-  content: z.string().max(SCHEDULE_MEMO_MAX_LENGTH),
+  content: memoContentSchema,
   overwrite: z.boolean(),
 });
 
@@ -121,11 +141,7 @@ export const schemaPasswordChangeForm = z
 /** スケジュールメモ入力フォーム */
 export const schemaMemoForm = z.object({
   dateKey: dateKeySchema,
-  content: z
-    .string()
-    .trim()
-    .min(1, "メモを入力してください")
-    .max(SCHEDULE_MEMO_MAX_LENGTH, `${SCHEDULE_MEMO_MAX_LENGTH}文字以内で入力してください`),
+  content: memoContentSchema.refine((value) => arraySplitLines(value).length > 0, "メモを入力してください"),
 });
 
 /** 凡例テキスト編集フォーム */

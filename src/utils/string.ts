@@ -1,11 +1,4 @@
-import type { BackgroundSlot, BackgroundSlotNumber, EditorRangeMode } from "@/types";
-
-/**
- * 複数行テキストの1行目を返す (前後の空白は除去)
- * @param text 対象テキスト
- * @returns 1行目の文字列 (空文字の場合は "")
- */
-export const stringFirstLine = (text: string): string => text.trim().split(/\r?\n/)[0].trim();
+import type { BackgroundSlot, BackgroundSlotNumber, StoryDensity } from "@/types";
 
 /**
  * エディタで使用する背景画像URLを決定する
@@ -45,14 +38,19 @@ export const stringResolveDefaultTargetMonth = (monthKeys: string[], todayKey: s
   return [...monthKeys].sort().at(-1) ?? "";
 };
 
+/** 1列・大きめ表示にするバッジ件数の上限 */
+const STORY_DENSITY_LARGE_MAX_COUNT = 6;
+
+/** 2列・中サイズ表示にするバッジ件数の上限 (超えると2列・小サイズ) */
+const STORY_DENSITY_MEDIUM_MAX_COUNT = 12;
+
 /**
- * ストーリーズキャンバスの見出しを生成する
- * @param rangeMode 期間・日付の選択方式
- * @param targetMonth 月指定時の対象年月 ("YYYY-MM")
- * @returns 見出し (月指定: "10月の空き状況" / 期間指定・未選択: "空き状況")
+ * バッジ件数からストーリーズキャンバスの表示密度を決定する
+ * @param itemCount 表示するバッジ件数
+ * @returns 表示密度 (6件以下: "lg" / 12件以下: "md" / それ以上: "sm")
  */
-export const stringBuildStoryTitle = (rangeMode: EditorRangeMode, targetMonth: string): string => {
-  if (rangeMode === "period") return "空き状況";
-  if (targetMonth === "") return "空き状況";
-  return `${Number(targetMonth.slice(5, 7))}月の空き状況`;
+export const stringResolveStoryDensity = (itemCount: number): StoryDensity => {
+  if (itemCount <= STORY_DENSITY_LARGE_MAX_COUNT) return "lg";
+  if (itemCount <= STORY_DENSITY_MEDIUM_MAX_COUNT) return "md";
+  return "sm";
 };

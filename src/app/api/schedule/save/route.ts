@@ -5,6 +5,7 @@ import { apiBadRequestResponse, apiGetSessionUser, apiParseJsonBody, apiUnauthor
 import { prisma } from "@/lib/prisma";
 import { schemaScheduleSaveBody } from "@/lib/schemas";
 import type { ResPostScheduleSave, ResPostScheduleSaveConflict } from "@/types/api/schedule/save";
+import { arraySplitLines } from "@/utils/array";
 
 /** スケジュールメモを新規登録・上書きする (overwrite=false で入力済みの場合は 409) */
 export async function POST(request: Request) {
@@ -14,6 +15,8 @@ export async function POST(request: Request) {
   const body = await apiParseJsonBody(request, schemaScheduleSaveBody);
   if (!body) return apiBadRequestResponse();
 
+  // 空行・各行の前後の空白を除去した形で保存する
+  const content = arraySplitLines(body.content).join("\n");
   const where = { userId_date: { userId: user.id, date: mapperDateKeyToDbDate(body.dateKey) } };
   const existing = await prisma.scheduleMemo.findUnique({ where });
 
@@ -32,8 +35,8 @@ export async function POST(request: Request) {
 
   const saved = await prisma.scheduleMemo.upsert({
     where,
-    create: { userId: user.id, date: mapperDateKeyToDbDate(body.dateKey), content: body.content },
-    update: { content: body.content },
+    create: { userId: user.id, date: mapperDateKeyToDbDate(body.dateKey), content },
+    update: { content },
   });
   return NextResponse.json<ResPostScheduleSave>({ memo: mapperScheduleMemo(saved), isCreated: !hasFilledMemo });
 }

@@ -12,7 +12,13 @@ const meta = {
       </div>
     ),
   ],
-  args: { label: "10/25(日)", markText: "◎", variant: "current" },
+  args: {
+    label: "10/25",
+    descriptionLines: ["10:00", "13:15", "14:00"],
+    markText: "日",
+    variant: "current",
+    density: "lg",
+  },
 } satisfies Meta<typeof CapsuleBadge>;
 
 export default meta;
@@ -23,11 +29,13 @@ type Story = StoryObj<typeof meta>;
 export const Current: Story = {};
 
 /** 次月以降 (黒背景白文字) */
-export const Future: Story = {
-  args: { label: "11/2(月)", variant: "future" },
-};
+export const Future: Story = { args: { label: "11/2", markText: "月", variant: "future" } };
 
-/** 残り枠数を丸バッジに表示 */
-export const RemainingCount: Story = {
-  args: { markText: "残1" },
-};
+/** 長い行を含むメモ (省略せず折り返して全文表示) */
+export const LongLine: Story = { args: { descriptionLines: ["16:00〜 カットのみ", "※カラーをご希望の方は要相談"] } };
+
+/** 2列表示用の中サイズ */
+export const Medium: Story = { args: { density: "md" } };
+
+/** 多件数用の小サイズ */
+export const Small: Story = { args: { density: "sm" } };

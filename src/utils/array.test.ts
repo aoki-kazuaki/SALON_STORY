@@ -9,6 +9,7 @@ import {
   arrayBuildMonthOptions,
   arrayBuildScheduleYearSummaries,
   arrayBuildStoryBadgeItems,
+  arraySplitLines,
 } from "./array";
 
 /** テスト用のメモを生成する */
@@ -82,6 +83,17 @@ describe("arrayBuildMonthOptions", () => {
   });
 });
 
+describe("arraySplitLines", () => {
+  it("行ごとに分割し、前後の空白と空行を除去する", () => {
+    expect(arraySplitLines(" 10:00 \r\n\n13:15\n  \n14:00\n")).toEqual(["10:00", "13:15", "14:00"]);
+  });
+
+  it("空文字・空白のみの場合は空配列を返す", () => {
+    expect(arraySplitLines("")).toEqual([]);
+    expect(arraySplitLines(" \n ")).toEqual([]);
+  });
+});
+
 describe("arrayBuildStoryBadgeItems", () => {
   const memos = [
     createMemo("2026-10-26", "13:00〜\n2名まで"),
@@ -90,12 +102,27 @@ describe("arrayBuildStoryBadgeItems", () => {
     createMemo("2026-11-02", "終日OK"),
   ];
 
-  it("本文が空のメモと除外日を除き、曜日・日付・1行目でバッジを生成する", () => {
+  it("本文が空のメモと除外日を除き、曜日・日付・メモの各行でバッジを生成する", () => {
     const result = arrayBuildStoryBadgeItems(memos, new Set(["2026-10-28"]), UNIT_TEST_BASE_DATE_KEY);
     expect(result).toEqual([
-      { dateKey: "2026-10-26", label: "10/26 13:00〜", markText: "月", variant: "current" },
-      { dateKey: "2026-11-02", label: "11/2 終日OK", markText: "月", variant: "future" },
+      {
+        dateKey: "2026-10-26",
+        label: "10/26",
+        descriptionLines: ["13:00〜", "2名まで"],
+        markText: "月",
+        variant: "current",
+      },
+      { dateKey: "2026-11-02", label: "11/2", descriptionLines: ["終日OK"], markText: "月", variant: "future" },
     ]);
+  });
+
+  it("各行の前後の空白と空行を除去する", () => {
+    const result = arrayBuildStoryBadgeItems(
+      [createMemo("2026-10-26", " 10:00 \r\n\n 13:15\n")],
+      new Set(),
+      UNIT_TEST_BASE_DATE_KEY,
+    );
+    expect(result[0].descriptionLines).toEqual(["10:00", "13:15"]);
   });
 
   it("対象がない場合は空配列を返す", () => {

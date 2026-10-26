@@ -12,7 +12,6 @@ import EditorPreviewPanel from "@/components/organisms/Editor/EditorPreviewPanel
 import EditorRangePanel from "@/components/organisms/Editor/EditorRangePanel";
 import EditorSlotList from "@/components/organisms/Editor/EditorSlotList";
 import DashboardPageLayout from "@/components/template/DashboardPageLayout";
-import { STORY_CANVAS_SUB_TITLE } from "@/constants/app";
 import { FALLBACK_BACKGROUND_IMAGE_URL } from "@/constants/sample";
 import { apiGet } from "@/lib/api/client";
 import { useEditorStore } from "@/stores/editorStore";
@@ -25,7 +24,7 @@ import type { ResGetScheduleSummary } from "@/types/api/schedule/summary";
 import { arrayBuildMonthOptions, arrayBuildStoryBadgeItems } from "@/utils/array";
 import { dateTodayKey } from "@/utils/date";
 import { objectBuildEditorRange } from "@/utils/object";
-import { stringBuildStoryTitle, stringResolveBackgroundUrl, stringResolveDefaultTargetMonth } from "@/utils/string";
+import { stringResolveBackgroundUrl, stringResolveDefaultTargetMonth } from "@/utils/string";
 
 /** エディタのタブ識別子 */
 type EditorTab = "edit" | "preview";
@@ -108,8 +107,6 @@ const EditorPage = () => {
   const backgroundImageUrl = stringResolveBackgroundUrl(slots, selectedSlotNumber, FALLBACK_BACKGROUND_IMAGE_URL);
   const canvas = {
     backgroundImageUrl,
-    subTitle: STORY_CANVAS_SUB_TITLE,
-    title: stringBuildStoryTitle(rangeMode, targetMonth),
     items: arrayBuildStoryBadgeItems(visibleMemos, excludedDateKeys, todayKey),
     legendTitle: "",
     legendText,

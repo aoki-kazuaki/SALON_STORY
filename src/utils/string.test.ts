@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { BackgroundSlot, BackgroundSlotNumber } from "@/types";
 
-import {
-  stringBuildStoryTitle,
-  stringFirstLine,
-  stringResolveBackgroundUrl,
-  stringResolveDefaultTargetMonth,
-} from "./string";
+import { stringResolveBackgroundUrl, stringResolveDefaultTargetMonth, stringResolveStoryDensity } from "./string";
 
 /** フォールバックURL */
 const FALLBACK_URL = "https://example.com/fallback.jpg";
@@ -18,14 +13,6 @@ const createSlot = (slotNumber: BackgroundSlotNumber): BackgroundSlot => ({
   objectKey: `key-${slotNumber}`,
   imageUrl: `https://example.com/slot${slotNumber}.jpg`,
   updatedAt: null,
-});
-
-describe("stringFirstLine", () => {
-  it("1行目を前後の空白を除いて返す", () => {
-    expect(stringFirstLine("  13:00〜 \n2名まで")).toBe("13:00〜");
-    expect(stringFirstLine("1行のみ")).toBe("1行のみ");
-    expect(stringFirstLine("")).toBe("");
-  });
 });
 
 describe("stringResolveBackgroundUrl", () => {
@@ -62,13 +49,15 @@ describe("stringResolveDefaultTargetMonth", () => {
   });
 });
 
-describe("stringBuildStoryTitle", () => {
-  it("月指定は対象月を含む見出しを返す", () => {
-    expect(stringBuildStoryTitle("month", "2026-11")).toBe("11月の空き状況");
-  });
-
-  it("期間指定・月未選択は共通の見出しを返す", () => {
-    expect(stringBuildStoryTitle("period", "2026-11")).toBe("空き状況");
-    expect(stringBuildStoryTitle("month", "")).toBe("空き状況");
+describe("stringResolveStoryDensity", () => {
+  it.each([
+    [0, "lg"],
+    [6, "lg"],
+    [7, "md"],
+    [12, "md"],
+    [13, "sm"],
+    [31, "sm"],
+  ])("%i件 → %s", (itemCount, expected) => {
+    expect(stringResolveStoryDensity(itemCount)).toBe(expected);
   });
 });

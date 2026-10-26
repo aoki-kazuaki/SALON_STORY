@@ -10,7 +10,6 @@ import type {
 } from "@/types";
 import { boolIsFutureMonth } from "@/utils/boolean";
 import { dateFormatMonthDay, dateFormatWeekday } from "@/utils/date";
-import { stringFirstLine } from "@/utils/string";
 
 /** パス階層ごとのパンくず表示ラベル */
 const BREADCRUMB_SEGMENT_LABELS: Record<string, string> = {
@@ -100,6 +99,17 @@ export const arrayBuildMonthOptions = (years: ScheduleYearSummary[]): { value: s
     })),
   );
 
+/**
+ * 複数行テキストを行ごとに分割する (各行の前後の空白と空行は除去)
+ * @param text 対象テキスト (改行コードは LF / CRLF どちらも可)
+ * @returns 行の一覧 (空文字・空白のみの場合は [])
+ */
+export const arraySplitLines = (text: string): string[] =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => !(line === ""));
+
 /** 翌月以降かどうかに対応するバッジのバリアント */
 const BADGE_VARIANT_BY_FUTURE: Record<"true" | "false", StoryBadgeVariant> = {
   true: "future",
@@ -111,7 +121,7 @@ const BADGE_VARIANT_BY_FUTURE: Record<"true" | "false", StoryBadgeVariant> = {
  * @param memos 抽出期間内のメモ (日付昇順)
  * @param excludedDateKeys チェックOFFで除外した日付キー
  * @param todayKey 今日の日付キー (当月/翌月以降の配色判定に利用)
- * @returns バッジ一覧 (丸バッジ: 曜日 / ピル: "M/D メモ1行目")
+ * @returns バッジ一覧 (丸バッジ: 曜日 / ピル: "M/D" ＋ メモの各行 (前後の空白・空行は除去))
  */
 export const arrayBuildStoryBadgeItems = (
   memos: ScheduleMemo[],
@@ -123,7 +133,8 @@ export const arrayBuildStoryBadgeItems = (
     .filter((memo) => !excludedDateKeys.has(memo.dateKey))
     .map((memo) => ({
       dateKey: memo.dateKey,
-      label: `${dateFormatMonthDay(memo.dateKey)} ${stringFirstLine(memo.content)}`,
+      label: dateFormatMonthDay(memo.dateKey),
+      descriptionLines: arraySplitLines(memo.content),
       markText: dateFormatWeekday(memo.dateKey),
       variant: BADGE_VARIANT_BY_FUTURE[String(boolIsFutureMonth(memo.dateKey, todayKey)) as "true" | "false"],
     }));

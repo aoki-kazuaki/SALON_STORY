@@ -12,7 +12,7 @@ import CTextarea from "@/components/atoms/CTextarea";
 import CConfirmDialog from "@/components/molecules/CConfirmDialog";
 import CDialog from "@/components/molecules/CDialog";
 import CFormField from "@/components/molecules/CFormField";
-import { SCHEDULE_MEMO_MAX_LENGTH } from "@/constants/app";
+import { SCHEDULE_MEMO_MAX_LENGTH, SCHEDULE_MEMO_MAX_LINE_LENGTH, SCHEDULE_MEMO_MAX_LINES } from "@/constants/app";
 import { apiPost } from "@/lib/api/client";
 import { schemaMemoForm } from "@/lib/schemas";
 import { useEditorStore } from "@/stores/editorStore";
@@ -124,7 +124,7 @@ const MemoEditDialog = ({
         open={open}
         onOpenChange={onOpenChange}
         title={title}
-        description="空き枠の時間帯などを入力してください。1行目がストーリーズのバッジに表示されます。"
+        description="空き枠の時間帯などを入力してください。入力した内容は改行も含めてそのままストーリーズのバッジに表示されます。"
         footer={
           <CButton type="submit" form="memo-edit-form" disabled={isSubmitting}>
             保存する
@@ -146,9 +146,15 @@ const MemoEditDialog = ({
             htmlFor="memo-content"
             label="メモ"
             error={errors.content?.message ?? ""}
-            hint={`${SCHEDULE_MEMO_MAX_LENGTH}文字まで・改行できます`}
+            hint={`最大${SCHEDULE_MEMO_MAX_LINES}行・1行${SCHEDULE_MEMO_MAX_LINE_LENGTH}文字まで (時間帯ごとに改行がおすすめ)`}
           >
-            <CTextarea id="memo-content" rows={4} placeholder={"例) 13:00〜 / 15:30〜"} {...register("content")} />
+            <CTextarea
+              id="memo-content"
+              rows={SCHEDULE_MEMO_MAX_LINES}
+              maxLength={SCHEDULE_MEMO_MAX_LENGTH}
+              placeholder={"例)\n10:00\n13:15"}
+              {...register("content")}
+            />
           </CFormField>
         </form>
       </CDialog>

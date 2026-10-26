@@ -196,10 +196,15 @@ export type StoryBadgeVariant = "current" | "future";
 export type StoryBadgeItem = {
   /** 日付キー (React の key としても利用) */
   dateKey: DateKey;
-  /** ピル内の表示ラベル (例: "10/25(日)") */
+  /** ピル内の日付ラベル (例: "10/25") */
   label: string;
-  /** 丸バッジ内の記号 (例: "◎", "残1") */
+  /** 日付ラベルに続けて表示するメモ本文の各行 (空行は除外済み、1行ごとに改行されないかたまりとして表示) */
+  descriptionLines: string[];
+  /** 丸バッジ内の記号 (例: "日") */
   markText: string;
   /** 表示バリアント */
   variant: StoryBadgeVariant;
 };
+
+/** バッジ件数に応じたキャンバスの表示密度 (lg: 1列・大 / md: 2列・中 / sm: 2列・小) */
+export type StoryDensity = "lg" | "md" | "sm";
