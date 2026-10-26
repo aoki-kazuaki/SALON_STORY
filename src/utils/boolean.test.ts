@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { UNIT_TEST_BASE_DATE_KEY, UNIT_TEST_INVALID_DATE } from "@/constants/unitTest";
 
-import { boolIsFutureMonth, boolIsPastDate, boolIsValidYearMonth } from "./boolean";
+import { boolIsEmailIdentifier, boolIsFutureMonth, boolIsPastDate, boolIsValidYearMonth } from "./boolean";
 
 describe("boolIsFutureMonth", () => {
   it.each([
@@ -48,5 +48,16 @@ describe("boolIsPastDate", () => {
 
   it("不正値は false を返す", () => {
     expect(boolIsPastDate(UNIT_TEST_INVALID_DATE, UNIT_TEST_BASE_DATE_KEY)).toBe(false);
+  });
+});
+
+describe("boolIsEmailIdentifier", () => {
+  it.each([
+    ["owner@example.com", true],
+    ["salon_owner", false],
+    ["salon.owner", false],
+    ["", false],
+  ])("%j → %s", (identifier, expected) => {
+    expect(boolIsEmailIdentifier(identifier)).toBe(expected);
   });
 });

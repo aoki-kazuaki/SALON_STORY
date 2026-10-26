@@ -1,12 +1,18 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { username } from "better-auth/plugins";
 
-import { AUTH_SESSION_EXPIRES_IN_SECONDS, AUTH_SESSION_UPDATE_AGE_SECONDS } from "@/constants/auth";
+import {
+  AUTH_ERROR_CODE_WEAK_PASSWORD,
+  AUTH_PASSWORD_RULE_TEXT,
+  AUTH_SESSION_EXPIRES_IN_SECONDS,
+  AUTH_SESSION_UPDATE_AGE_SECONDS,
+} from "@/constants/auth";
 import { mailNotifyRegistration, mailSendPasswordResetUrl } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
+import { schemaPassword } from "@/lib/schemas";
 import type { ApprovalStatus, UserRole } from "@/types";
 
 /** 新規登録時の管理者承認をスキップするか (ローカル開発専用) */
@@ -27,6 +33,25 @@ const resolveInitialAccountStatus = async (): Promise<InitialAccountStatus> => {
   if (isApprovalSkipped) return { role: "USER", approvalStatus: "APPROVED" };
   return { role: "USER", approvalStatus: "PENDING" };
 };
+
+/** 新しいパスワードを受け取る BetterAuth エンドポイントと、ボディ内のパスワード項目名の対応表 */
+const PASSWORD_FIELD_BY_PATH: Record<string, string> = {
+  "/sign-up/email": "password",
+  "/reset-password": "newPassword",
+  "/change-password": "newPassword",
+};
+
+/** 新しいパスワードがルール (英大文字・英小文字・数字を含む8文字以上) を満たさなければ 400 を返す */
+const validatePasswordRule = createAuthMiddleware(async (ctx) => {
+  const field = PASSWORD_FIELD_BY_PATH[ctx.path] ?? "";
+  if (field === "") return;
+  const body = (ctx.body ?? {}) as Record<string, unknown>;
+  if (schemaPassword.safeParse(body[field]).success) return;
+  throw new APIError("BAD_REQUEST", {
+    message: `パスワードは${AUTH_PASSWORD_RULE_TEXT}で入力してください`,
+    code: AUTH_ERROR_CODE_WEAK_PASSWORD,
+  });
+});
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
@@ -76,5 +101,6 @@ export const auth = betterAuth({
       },
     },
   },
+  hooks: { before: validatePasswordRule },
   plugins: [username(), nextCookies()],
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { schemaMemoForm, schemaScheduleSaveBody } from "./schemas";
+import { schemaLoginForm, schemaMemoForm, schemaPassword, schemaScheduleSaveBody } from "./schemas";
 
 /** メモ入力フォームの値を検証する */
 const parseMemo = (content: string) => schemaMemoForm.safeParse({ dateKey: "2026-10-25", content });
@@ -44,5 +44,31 @@ describe("schemaScheduleSaveBody (API 側のメモ本文の検証)", () => {
     expect(parse("10:00\n13:15\n14:00")).toBe(true);
     expect(parse("10:00\n11:00\n13:15\n14:00")).toBe(false);
     expect(parse("1234567890123456")).toBe(false);
+  });
+});
+
+describe("schemaPassword (パスワードの入力条件)", () => {
+  it.each([["Salon2026"], ["aB345678"], ["Abcdefg1!"]])("%j は登録可能", (password) => {
+    expect(schemaPassword.safeParse(password).success).toBe(true);
+  });
+
+  it.each([
+    ["Salon26", "7文字以下"],
+    ["salon2026", "英大文字なし"],
+    ["SALON2026", "英小文字なし"],
+    ["SalonOwner", "数字なし"],
+  ])("%j は登録不可 (%s)", (password) => {
+    expect(schemaPassword.safeParse(password).success).toBe(false);
+  });
+});
+
+describe("schemaLoginForm (ログインIDまたはメールアドレス)", () => {
+  it("前後の空白を除去して受け付ける", () => {
+    const result = schemaLoginForm.safeParse({ identifier: " owner@example.com ", password: "x" });
+    expect(result.success && result.data.identifier).toBe("owner@example.com");
+  });
+
+  it("未入力はエラー", () => {
+    expect(schemaLoginForm.safeParse({ identifier: " ", password: "x" }).success).toBe(false);
   });
 });

@@ -40,3 +40,6 @@ export const UNIT_TEST_BADGE_ITEMS: StoryBadgeItem[] = [
 
 /** カプセルバッジのテスト用メモの各行 (長い行を含む) */
 export const UNIT_TEST_BADGE_DESCRIPTION_LINES: string[] = ["10:00", "13:15", "※カラーをご希望の方は要相談"];
+
+/** パスワード入力欄のテスト用パスワード (英大文字・英小文字・数字を含む8文字以上) */
+export const UNIT_TEST_PASSWORD: string = "Salon2026";

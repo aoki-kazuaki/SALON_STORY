@@ -10,6 +10,24 @@ const NETWORK_ERROR: ApiErrorResponse = {
   message: "通信に失敗しました。時間をおいて再度お試しください",
 };
 
+/** サーバー側の予期しないエラー */
+const SERVER_ERROR: ApiErrorResponse = {
+  code: "SERVER_ERROR",
+  message: "サーバーでエラーが発生しました。時間をおいて再度お試しください",
+};
+
+/** JSON のエラー本文が返らなかった場合 (ホスティング側で弾かれた等) に、ステータスごとに表示するエラー */
+const FALLBACK_ERRORS_BY_STATUS: Record<number, ApiErrorResponse> = {
+  401: { code: "UNAUTHORIZED", message: "ログインの有効期限が切れました。再度ログインしてください" },
+  403: { code: "FORBIDDEN", message: "この操作を行う権限がありません" },
+  404: { code: "NOT_FOUND", message: "対象のデータが見つかりません。画面を再読み込みしてください" },
+  413: { code: "PAYLOAD_TOO_LARGE", message: "送信するデータが大きすぎます。ファイルサイズを小さくしてお試しください" },
+  429: { code: "TOO_MANY_REQUESTS", message: "操作が集中しています。しばらく待ってから再度お試しください" },
+};
+
+/** JSON のエラー本文が返らなかった場合のエラーを返す (該当ステータスが無ければサーバーエラー扱い) */
+const fallbackError = (status: number): ApiErrorResponse => FALLBACK_ERRORS_BY_STATUS[status] ?? SERVER_ERROR;
+
 /** fetch を実行し、結果を ApiResult に変換する (401 の場合はログイン画面へ遷移) */
 const request = async <TData, TError>(path: string, init: RequestInit): Promise<ApiResult<TData, TError>> => {
   try {
@@ -19,7 +37,12 @@ const request = async <TData, TError>(path: string, init: RequestInit): Promise<
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     if (response.status === 401) window.location.assign("/login");
     if (response.ok) return { ok: true, status: response.status, data: json as TData, error: null };
-    return { ok: false, status: response.status, data: null, error: (json ?? NETWORK_ERROR) as TError };
+    return {
+      ok: false,
+      status: response.status,
+      data: null,
+      error: (json ?? fallbackError(response.status)) as TError,
+    };
   } catch {
     return { ok: false, status: 0, data: null, error: NETWORK_ERROR as TError };
   }

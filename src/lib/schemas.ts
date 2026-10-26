@@ -1,7 +1,14 @@
 import dayjs from "dayjs";
 import { z } from "zod";
 
-import { AUTH_PASSWORD_MIN_LENGTH, AUTH_USERNAME_MIN_LENGTH } from "@/constants/auth";
+import {
+  AUTH_PASSWORD_MAX_LENGTH,
+  AUTH_PASSWORD_MIN_LENGTH,
+  AUTH_PASSWORD_PATTERN,
+  AUTH_PASSWORD_RULE_TEXT,
+  AUTH_USERNAME_MAX_LENGTH,
+  AUTH_USERNAME_MIN_LENGTH,
+} from "@/constants/auth";
 import {
   BACKGROUND_SLOT_NUMBERS,
   LEGEND_MAX_LENGTH,
@@ -40,10 +47,12 @@ const memoContentSchema = z
 /** メールアドレス */
 const emailSchema = z.email("メールアドレスの形式が正しくありません");
 
-/** パスワード */
-const passwordSchema = z
+/** パスワード (英大文字・英小文字・数字をそれぞれ含む8文字以上、サーバー側の BetterAuth フックでも同じ検証を行う) */
+export const schemaPassword = z
   .string()
-  .min(AUTH_PASSWORD_MIN_LENGTH, `${AUTH_PASSWORD_MIN_LENGTH}文字以上で入力してください`);
+  .min(AUTH_PASSWORD_MIN_LENGTH, `${AUTH_PASSWORD_MIN_LENGTH}文字以上で入力してください`)
+  .max(AUTH_PASSWORD_MAX_LENGTH, `${AUTH_PASSWORD_MAX_LENGTH}文字以内で入力してください`)
+  .regex(AUTH_PASSWORD_PATTERN, `${AUTH_PASSWORD_RULE_TEXT}で入力してください`);
 
 // -----------------------------------------------------------------------------
 // API リクエスト検証 (サーバー側)
@@ -92,7 +101,7 @@ export const schemaAdminApproveResetBody = z.object({ requestId: z.string().min(
 
 /** ログインフォーム */
 export const schemaLoginForm = z.object({
-  username: z.string().min(1, "ログインIDを入力してください"),
+  identifier: z.string().trim().min(1, "ログインIDまたはメールアドレスを入力してください"),
   password: z.string().min(1, "パスワードを入力してください"),
 });
 
@@ -102,10 +111,11 @@ export const schemaRegisterForm = z
     username: z
       .string()
       .min(AUTH_USERNAME_MIN_LENGTH, `${AUTH_USERNAME_MIN_LENGTH}文字以上で入力してください`)
+      .max(AUTH_USERNAME_MAX_LENGTH, `${AUTH_USERNAME_MAX_LENGTH}文字以内で入力してください`)
       .regex(/^[a-zA-Z0-9_.]+$/, "半角英数字・アンダースコア・ドットのみ使用できます"),
     email: emailSchema,
-    password: passwordSchema,
-    passwordConfirm: z.string(),
+    password: schemaPassword,
+    passwordConfirm: z.string().min(1, "確認のため、もう一度パスワードを入力してください"),
   })
   .refine((value) => value.password === value.passwordConfirm, {
     message: "パスワードが一致しません",
@@ -117,7 +127,10 @@ export const schemaForgotPasswordForm = z.object({ email: emailSchema });
 
 /** PW再設定フォーム */
 export const schemaResetPasswordForm = z
-  .object({ password: passwordSchema, passwordConfirm: z.string() })
+  .object({
+    password: schemaPassword,
+    passwordConfirm: z.string().min(1, "確認のため、もう一度パスワードを入力してください"),
+  })
   .refine((value) => value.password === value.passwordConfirm, {
     message: "パスワードが一致しません",
     path: ["passwordConfirm"],
@@ -130,8 +143,12 @@ export const schemaEmailChangeForm = z.object({ email: emailSchema });
 export const schemaPasswordChangeForm = z
   .object({
     currentPassword: z.string().min(1, "現在のパスワードを入力してください"),
-    password: passwordSchema,
-    passwordConfirm: z.string(),
+    password: schemaPassword,
+    passwordConfirm: z.string().min(1, "確認のため、もう一度パスワードを入力してください"),
+  })
+  .refine((value) => !(value.password === value.currentPassword), {
+    message: "現在のパスワードとは異なるパスワードを入力してください",
+    path: ["password"],
   })
   .refine((value) => value.password === value.passwordConfirm, {
     message: "パスワードが一致しません",

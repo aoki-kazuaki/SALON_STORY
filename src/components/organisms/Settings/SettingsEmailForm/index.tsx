@@ -32,6 +32,7 @@ const SettingsEmailForm = ({ currentEmail, onSuccess }: Props) => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<EmailChangeFormValues>({ resolver: zodResolver(schemaEmailChangeForm), defaultValues: { email: "" } });
 
@@ -40,6 +41,10 @@ const SettingsEmailForm = ({ currentEmail, onSuccess }: Props) => {
     const values = pendingValues;
     setPendingValues(null);
     const result = await apiPost<ResPostUserEmail>("/api/user/email", values);
+    if (result.error?.code === "EMAIL_TAKEN") {
+      setError("email", { message: result.error.message }, { shouldFocus: true });
+      return;
+    }
     if (!result.ok) {
       toast.error(result.error.message);
       return;
@@ -47,12 +52,21 @@ const SettingsEmailForm = ({ currentEmail, onSuccess }: Props) => {
     onSuccess("メールアドレスを変更しました");
   };
 
+  /** 入力内容を確認し、現在と同じメールアドレスでなければ確認ダイアログを開く */
+  const handleValid = (values: EmailChangeFormValues) => {
+    if (values.email.toLowerCase() === currentEmail.toLowerCase()) {
+      setError("email", { message: "現在と同じメールアドレスです。新しいメールアドレスを入力してください" });
+      return;
+    }
+    setPendingValues(values);
+  };
+
   /** 確認ダイアログを表示するかどうかの判定フラグ */
   const isConfirmOpen: boolean = Boolean(pendingValues);
 
   return (
     <CCard title="メールアドレスの変更" description={`現在: ${currentEmail}`}>
-      <form className="grid gap-4" onSubmit={handleSubmit((values) => setPendingValues(values))}>
+      <form className="grid gap-4" onSubmit={handleSubmit(handleValid)}>
         <CFormField htmlFor="settings-email" label="新しいメールアドレス" error={errors.email?.message ?? ""}>
           <CInput id="settings-email" type="email" autoComplete="email" {...register("email")} />
         </CFormField>

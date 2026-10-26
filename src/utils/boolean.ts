@@ -43,3 +43,10 @@ export const boolIsPastDate = (dateKey: DateKey, baseDateKey: DateKey): boolean 
   if (!base.isValid()) return false;
   return target.isBefore(base, "day");
 };
+
+/**
+ * ログイン入力値がメールアドレスかどうかを判定する (ログインIDは "@" を含められないため "@" の有無で判別)
+ * @param identifier ログインIDまたはメールアドレス
+ * @returns "@" を含む場合は true
+ */
+export const boolIsEmailIdentifier = (identifier: string): boolean => identifier.includes("@");

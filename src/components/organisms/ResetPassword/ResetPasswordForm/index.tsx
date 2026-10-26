@@ -9,8 +9,11 @@ import type { z } from "zod";
 import CButton from "@/components/atoms/CButton";
 import CInput from "@/components/atoms/CInput";
 import CFormField from "@/components/molecules/CFormField";
+import CPasswordInput from "@/components/molecules/CPasswordInput";
+import { AUTH_PASSWORD_RULE_TEXT } from "@/constants/auth";
 import { apiGet } from "@/lib/api/client";
 import { authClient } from "@/lib/authClient";
+import { authCall, authErrorMessage } from "@/lib/authError";
 import { schemaResetPasswordForm } from "@/lib/schemas";
 import type { ResGetPasswordResetDetail } from "@/types/api/password-reset/detail";
 
@@ -23,13 +26,14 @@ type Props = {
   token: string;
 };
 
-/** トークン確認状態 (checking: 確認中 / valid: 有効 / invalid: 無効・期限切れ / done: 再設定完了) */
-type TokenStatus = "checking" | "valid" | "invalid" | "done";
+/** トークン確認状態 (checking: 確認中 / valid: 有効 / invalid: 無効・期限切れ / error: 確認自体に失敗 / done: 再設定完了) */
+type TokenStatus = "checking" | "valid" | "invalid" | "error" | "done";
 
 /** PW再設定フォーム (メールアドレスは非活性表示、新パスワードを2回入力) */
 const ResetPasswordForm = ({ token }: Props) => {
   const [status, setStatus] = useState<TokenStatus>("checking");
   const [email, setEmail] = useState("");
+  const [verifyError, setVerifyError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const {
     register,
@@ -43,8 +47,10 @@ const ResetPasswordForm = ({ token }: Props) => {
   useEffect(() => {
     const verifyToken = async () => {
       const result = await apiGet<ResGetPasswordResetDetail>("/api/password-reset/detail", { token });
+      // 通信・サーバーエラーを「URLが無効」と表示すると再申請させてしまうため、別の表示にする
       if (!result.ok) {
-        setStatus("invalid");
+        setVerifyError(result.error.message);
+        setStatus("error");
         return;
       }
       if (!result.data.isValid) {
@@ -59,9 +65,9 @@ const ResetPasswordForm = ({ token }: Props) => {
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
     setSubmitError("");
-    const { error } = await authClient.resetPassword({ newPassword: values.password, token });
+    const error = await authCall(() => authClient.resetPassword({ newPassword: values.password, token }));
     if (error) {
-      setSubmitError("再設定に失敗しました。URLの有効期限が切れている可能性があります");
+      setSubmitError(authErrorMessage(error, "再設定に失敗しました。時間をおいて再度お試しください"));
       return;
     }
     setStatus("done");
@@ -76,6 +82,18 @@ const ResetPasswordForm = ({ token }: Props) => {
       <p className="text-destructive text-sm">
         URLが無効、または有効期限が切れています。お手数ですが再度リセットを申請してください。
       </p>
+    );
+  }
+  if (status === "error") {
+    return (
+      <div className="grid gap-4">
+        <p role="alert" className="text-destructive text-sm">
+          {verifyError}
+        </p>
+        <CButton size="lg" variant="outline" onClick={() => window.location.reload()}>
+          再読み込み
+        </CButton>
+      </div>
     );
   }
   if (status === "done") {
@@ -94,20 +112,20 @@ const ResetPasswordForm = ({ token }: Props) => {
       <CFormField htmlFor="reset-email" label="メールアドレス">
         <CInput id="reset-email" type="email" value={email} disabled readOnly />
       </CFormField>
-      <CFormField htmlFor="reset-password" label="新しいパスワード" error={errors.password?.message ?? ""}>
-        <CInput id="reset-password" type="password" autoComplete="new-password" {...register("password")} />
+      <CFormField
+        htmlFor="reset-password"
+        label="新しいパスワード"
+        error={errors.password?.message ?? ""}
+        hint={AUTH_PASSWORD_RULE_TEXT}
+      >
+        <CPasswordInput id="reset-password" autoComplete="new-password" {...register("password")} />
       </CFormField>
       <CFormField
         htmlFor="reset-password-confirm"
         label="新しいパスワード (確認)"
         error={errors.passwordConfirm?.message ?? ""}
       >
-        <CInput
-          id="reset-password-confirm"
-          type="password"
-          autoComplete="new-password"
-          {...register("passwordConfirm")}
-        />
+        <CPasswordInput id="reset-password-confirm" autoComplete="new-password" {...register("passwordConfirm")} />
       </CFormField>
       {hasSubmitError && (
         <p role="alert" className="text-destructive text-sm">

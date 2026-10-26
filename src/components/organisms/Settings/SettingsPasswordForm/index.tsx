@@ -7,15 +7,25 @@ import { toast } from "sonner";
 import type { z } from "zod";
 
 import CButton from "@/components/atoms/CButton";
-import CInput from "@/components/atoms/CInput";
 import CCard from "@/components/molecules/CCard";
 import CConfirmDialog from "@/components/molecules/CConfirmDialog";
 import CFormField from "@/components/molecules/CFormField";
+import CPasswordInput from "@/components/molecules/CPasswordInput";
+import { AUTH_MESSAGES_BY_CODE, AUTH_PASSWORD_RULE_TEXT } from "@/constants/auth";
 import { authClient } from "@/lib/authClient";
+import { authCall, authErrorMessage } from "@/lib/authError";
 import { schemaPasswordChangeForm } from "@/lib/schemas";
 
 /** パスワード変更フォームの値 */
 type PasswordChangeFormValues = z.infer<typeof schemaPasswordChangeForm>;
+
+/** 入力欄に表示する、BetterAuth のエラーコード別文言 (該当しないコードはトーストで表示) */
+const CHANGE_PASSWORD_FIELD_ERRORS: Record<string, { field: keyof PasswordChangeFormValues; message: string }> = {
+  INVALID_PASSWORD: { field: "currentPassword", message: "現在のパスワードが正しくありません" },
+  WEAK_PASSWORD: { field: "password", message: AUTH_MESSAGES_BY_CODE.WEAK_PASSWORD },
+  PASSWORD_TOO_SHORT: { field: "password", message: AUTH_MESSAGES_BY_CODE.PASSWORD_TOO_SHORT },
+  PASSWORD_TOO_LONG: { field: "password", message: AUTH_MESSAGES_BY_CODE.PASSWORD_TOO_LONG },
+};
 
 /** SettingsPasswordForm の Props */
 type Props = {
@@ -29,6 +39,7 @@ const SettingsPasswordForm = ({ onSuccess }: Props) => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<PasswordChangeFormValues>({
     resolver: zodResolver(schemaPasswordChangeForm),
@@ -39,13 +50,20 @@ const SettingsPasswordForm = ({ onSuccess }: Props) => {
     if (!pendingValues) return;
     const values = pendingValues;
     setPendingValues(null);
-    const { error } = await authClient.changePassword({
-      currentPassword: values.currentPassword,
-      newPassword: values.password,
-      revokeOtherSessions: true,
-    });
+    const error = await authCall(() =>
+      authClient.changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.password,
+        revokeOtherSessions: true,
+      }),
+    );
+    const fieldError = CHANGE_PASSWORD_FIELD_ERRORS[error?.code ?? ""] ?? null;
+    if (fieldError) {
+      setError(fieldError.field, { message: fieldError.message }, { shouldFocus: true });
+      return;
+    }
     if (error) {
-      toast.error("現在のパスワードが正しくありません");
+      toast.error(authErrorMessage(error, "パスワードの変更に失敗しました。時間をおいて再度お試しください"));
       return;
     }
     onSuccess("パスワードを変更しました");
@@ -62,27 +80,26 @@ const SettingsPasswordForm = ({ onSuccess }: Props) => {
           label="現在のパスワード"
           error={errors.currentPassword?.message ?? ""}
         >
-          <CInput
+          <CPasswordInput
             id="settings-current-password"
-            type="password"
             autoComplete="current-password"
             {...register("currentPassword")}
           />
         </CFormField>
-        <CFormField htmlFor="settings-password" label="新しいパスワード" error={errors.password?.message ?? ""}>
-          <CInput id="settings-password" type="password" autoComplete="new-password" {...register("password")} />
+        <CFormField
+          htmlFor="settings-password"
+          label="新しいパスワード"
+          error={errors.password?.message ?? ""}
+          hint={AUTH_PASSWORD_RULE_TEXT}
+        >
+          <CPasswordInput id="settings-password" autoComplete="new-password" {...register("password")} />
         </CFormField>
         <CFormField
           htmlFor="settings-password-confirm"
           label="新しいパスワード (確認)"
           error={errors.passwordConfirm?.message ?? ""}
         >
-          <CInput
-            id="settings-password-confirm"
-            type="password"
-            autoComplete="new-password"
-            {...register("passwordConfirm")}
-          />
+          <CPasswordInput id="settings-password-confirm" autoComplete="new-password" {...register("passwordConfirm")} />
         </CFormField>
         <CButton type="submit" className="justify-self-start" disabled={isSubmitting}>
           変更する
