@@ -29,6 +29,8 @@ type EditorState = EditorSelection & {
   setMemos: (rangeKey: string, memos: ScheduleMemo[]) => void;
   /** メモ更新時に取得済みデータを破棄し、次回表示で再取得させる */
   invalidateMemos: () => void;
+  /** エディタ上で保存したメモを取得済みデータへ反映する (再取得せず即時にキャンバスへ反映) */
+  upsertMemo: (rangeKey: string, memo: ScheduleMemo) => void;
 };
 
 /** ストーリーズエディタの選択状態 (画面遷移を跨いで保持) */
@@ -60,4 +62,11 @@ export const useEditorStore = create<EditorState>()((set) => ({
   setSelectedSlotNumber: (selectedSlotNumber) => set({ selectedSlotNumber }),
   setMemos: (fetchedRangeKey, memos) => set({ fetchedRangeKey, memos }),
   invalidateMemos: () => set({ fetchedRangeKey: "" }),
+  upsertMemo: (fetchedRangeKey, memo) =>
+    set((state) => ({
+      fetchedRangeKey,
+      memos: [...state.memos.filter((item) => !(item.dateKey === memo.dateKey)), memo].sort((a, b) =>
+        a.dateKey.localeCompare(b.dateKey),
+      ),
+    })),
 }));

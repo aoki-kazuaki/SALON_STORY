@@ -130,7 +130,7 @@ export type ScheduleYearSummary = {
   months: ScheduleMonthSummary[];
 };
 
-/** 月別一覧で直前に操作した日に付与するバッジ種別 ("" は付与なし) */
+/** 月別一覧・エディタの空き枠リストで、直前に操作した日に付与するバッジ種別 ("" は付与なし) */
 export type ScheduleOperationBadge = "NEW" | "UPDATED" | "";
 
 // -----------------------------------------------------------------------------

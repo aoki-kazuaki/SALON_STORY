@@ -15,7 +15,7 @@ import DashboardPageLayout from "@/components/template/DashboardPageLayout";
 import { FALLBACK_BACKGROUND_IMAGE_URL } from "@/constants/sample";
 import { apiGet } from "@/lib/api/client";
 import { useEditorStore } from "@/stores/editorStore";
-import type { BackgroundSlot, ScheduleYearSummary } from "@/types";
+import type { BackgroundSlot, DateKey, ScheduleMemo, ScheduleOperationBadge, ScheduleYearSummary } from "@/types";
 import type { ResGetBackgroundList } from "@/types/api/background/list";
 import type { ResGetEditorSetting } from "@/types/api/editor/setting";
 import type { ResGetLegendDetail } from "@/types/api/legend/detail";
@@ -37,6 +37,7 @@ const EditorPage = () => {
   const [slots, setSlots] = useState<BackgroundSlot[]>([]);
   const [legendText, setLegendText] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [operationBadges, setOperationBadges] = useState<Record<DateKey, ScheduleOperationBadge>>({});
 
   const rangeMode = useEditorStore((state) => state.rangeMode);
   const targetMonth = useEditorStore((state) => state.targetMonth);
@@ -48,6 +49,7 @@ const EditorPage = () => {
   const memos = useEditorStore((state) => state.memos);
   const fetchedRangeKey = useEditorStore((state) => state.fetchedRangeKey);
   const setMemos = useEditorStore((state) => state.setMemos);
+  const upsertMemo = useEditorStore((state) => state.upsertMemo);
 
   // 初期化: 登録済み月・背景スロット・選択中の背景・凡例テキストを並列取得
   useEffect(() => {
@@ -101,6 +103,12 @@ const EditorPage = () => {
     fetchMemos();
   }, [hasRange, fetchedRangeKey, rangeKey, range.startDate, range.endDate, setMemos]);
 
+  /** 空き枠リストで編集したメモを即時反映し、操作バッジを付与する (再取得の通信は行わない) */
+  const handleMemoChanged = (memo: ScheduleMemo, badge: ScheduleOperationBadge) => {
+    upsertMemo(rangeKey, memo);
+    setOperationBadges((current) => ({ ...current, [memo.dateKey]: badge }));
+  };
+
   /** メモを取得中かどうかの判定フラグ */
   const isMemoLoading: boolean = hasRange && !(fetchedRangeKey === rangeKey);
   const visibleMemos = memos.filter((memo) => memo.dateKey >= range.startDate && memo.dateKey <= range.endDate);
@@ -127,7 +135,12 @@ const EditorPage = () => {
             content: (
               <div className="grid gap-4">
                 <EditorRangePanel monthOptions={arrayBuildMonthOptions(years)} todayKey={todayKey} />
-                <EditorSlotList memos={visibleMemos} isLoading={isMemoLoading} />
+                <EditorSlotList
+                  memos={visibleMemos}
+                  isLoading={isMemoLoading}
+                  operationBadges={operationBadges}
+                  onMemoChanged={handleMemoChanged}
+                />
                 <EditorBackgroundPicker slots={slots} activeImageUrl={backgroundImageUrl} />
                 <CButton size="lg" onClick={() => setActiveTab("preview")}>
                   <EyeIcon />

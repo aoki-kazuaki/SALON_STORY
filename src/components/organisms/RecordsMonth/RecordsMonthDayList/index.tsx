@@ -4,11 +4,12 @@ import { PencilIcon, PlusIcon, EraserIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import CBadge, { type CBadgeTone } from "@/components/atoms/CBadge";
+import CBadge from "@/components/atoms/CBadge";
 import CButton from "@/components/atoms/CButton";
 import CAccordion from "@/components/molecules/CAccordion";
 import CConfirmDialog from "@/components/molecules/CConfirmDialog";
 import MemoEditDialog from "@/components/organisms/App/MemoEditDialog";
+import { SCHEDULE_OPERATION_BADGE_TONES, SCHEDULE_SAVED_BADGES } from "@/constants/app";
 import { apiDelete } from "@/lib/api/client";
 import { useEditorStore } from "@/stores/editorStore";
 import type { DateKey, ScheduleMemo, ScheduleOperationBadge } from "@/types";
@@ -39,18 +40,6 @@ type EditTarget = {
   content: string;
   /** 入力済みメモの編集かどうか (false はメモ追加) */
   isEdit: boolean;
-};
-
-/** 操作バッジごとの配色 */
-const OPERATION_BADGE_TONES: Record<Exclude<ScheduleOperationBadge, "">, CBadgeTone> = {
-  NEW: "green",
-  UPDATED: "orange",
-};
-
-/** 保存結果 (新規作成かどうか) に対応する操作バッジ */
-const SAVED_BADGES: Record<"true" | "false", ScheduleOperationBadge> = {
-  true: "NEW",
-  false: "UPDATED",
 };
 
 /** 当月の日別アコーディオン一覧 (入力済: 青バッジ・編集/クリア / 未入力: グレーバッジ・メモ追加) */
@@ -105,7 +94,7 @@ const RecordsMonthDayList = ({
                 <span className="w-24 font-bold tabular-nums">{dateFormatBadgeLabel(day.dateKey)}</span>
                 <CBadge tone={statusTone}>{statusLabel}</CBadge>
                 {hasOperationBadge && (
-                  <CBadge tone={OPERATION_BADGE_TONES[operationBadge as Exclude<ScheduleOperationBadge, "">]}>
+                  <CBadge tone={SCHEDULE_OPERATION_BADGE_TONES[operationBadge as Exclude<ScheduleOperationBadge, "">]}>
                     {operationBadge}
                   </CBadge>
                 )}
@@ -165,7 +154,7 @@ const RecordsMonthDayList = ({
         isDateLocked
         minDateKey=""
         isOverwrite={editTarget?.isEdit ?? false}
-        onSaved={(memo, isCreated) => onMemoChanged(memo, SAVED_BADGES[String(isCreated) as "true" | "false"])}
+        onSaved={(memo, isCreated) => onMemoChanged(memo, SCHEDULE_SAVED_BADGES[String(isCreated) as "true" | "false"])}
       />
 
       <CConfirmDialog

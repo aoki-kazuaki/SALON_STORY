@@ -1,5 +1,6 @@
 // アプリケーション全体の業務ルールに関する定数定義
-import type { BackgroundSlotNumber } from "@/types";
+import type { CBadgeTone } from "@/components/atoms/CBadge";
+import type { BackgroundSlotNumber, ScheduleOperationBadge } from "@/types";
 
 /** 背景画像の固定スロット番号一覧 */
 export const BACKGROUND_SLOT_NUMBERS: BackgroundSlotNumber[] = [1, 2, 3, 4, 5];
@@ -45,3 +46,15 @@ export const EDITOR_PERIOD_DAY_PRESETS: number[] = [7, 14, 21, 28];
 
 /** トースト通知の表示時間 (ミリ秒) */
 export const TOAST_DURATION_MS: number = 2000;
+
+/** 操作直後のバッジ (NEW / UPDATED) ごとの配色 (月別一覧・エディタの空き枠リストで共通) */
+export const SCHEDULE_OPERATION_BADGE_TONES: Record<Exclude<ScheduleOperationBadge, "">, CBadgeTone> = {
+  NEW: "green",
+  UPDATED: "orange",
+};
+
+/** メモ保存 API の結果 (新規作成かどうか) に対応する操作バッジ */
+export const SCHEDULE_SAVED_BADGES: Record<"true" | "false", ScheduleOperationBadge> = {
+  true: "NEW",
+  false: "UPDATED",
+};
