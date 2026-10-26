@@ -3,7 +3,7 @@ import type { BackgroundSlot } from "@/types";
 
 /** POST リクエストボディ (FormData のフィールド) */
 export type ReqBodyBackgroundUpload = {
-  /** アップロード先スロット番号 ("1"〜"5") */
+  /** アップロード先スロット番号 ("1"〜"4") */
   slotNumber: string;
   /** 画像ファイル (JPEG / PNG / WebP、4MB まで) */
   file: File;
