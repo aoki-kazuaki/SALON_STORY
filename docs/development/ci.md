@@ -4,6 +4,8 @@
 
 GitHub Actions・Dependabot・ブランチ保護ルールで行っている自動チェックの一覧です。設定ファイルはすべて `.github/` にあります。
 
+CI が失敗したときや Dependabot の PR が届いたときの対応手順は [CI・Dependabot 運用ガイド](ci-operations.md) を参照してください。
+
 ## 全体像
 
 | 仕組み | 設定ファイル | 実行タイミング | 目的 |
@@ -68,6 +70,7 @@ CI・Security ともに、同じ PR に新しいコミットが push される�
 | GitHub Actions | 毎週月曜 9:00 (JST) | develop | すべて1つの PR |
 
 - 公開から3日経ったバージョンだけを対象にする (`cooldown`)。乗っ取られたパッケージの悪意ある版を取り込むリスクを下げるため。
+- TypeScript のメジャー更新と、@types/node の 25 以上は提案しない (`ignore`)。理由と解除条件は [運用ガイドの除外ルール](ci-operations.md#除外ルール-dependabotyml-の-ignore) を参照。
 - 更新 PR にも CI・Security が走るので、すべて成功したものだけをマージする。
 - 脆弱性が見つかったときの緊急の更新 PR は、リポジトリ設定の「Dependabot security updates」を有効にすると随時作成される。
 

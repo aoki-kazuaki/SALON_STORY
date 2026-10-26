@@ -19,6 +19,16 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
+    # 提案しない更新 (解除するときは docs/development/ci-operations.md の「除外ルール」を参照)
+    ignore:
+      # TypeScript 7 (ネイティブ実装への全面刷新) は typescript-eslint が未対応で ESLint が動かないため、
+      # メジャー更新は周辺ツールの対応を確認してから手動で行う (マイナー・パッチ更新は引き続き提案される)
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # 型定義は実行環境の Node.js (24) に合わせる。新しいメジャーの型を入れると、Node 24 に無い機能を使えてしまう
+      # Node.js 本体を上げるときに、CI (ci.yml / security.yml の node-version) と一緒に手動で上げる
+      - dependency-name: "@types/node"
+        versions: [">=25.0.0"]
     # 一緒に更新しないと動かないものはまとめる (上から順に最初に一致したグループに入る)
     groups:
       next:

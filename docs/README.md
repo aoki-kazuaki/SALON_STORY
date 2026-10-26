@@ -9,7 +9,8 @@
 | 2 | [テーブル定義書](db/README.md) | テーブル一覧・ER図・型早見表と、テーブルごとのカラム定義 (9 テーブル) |
 | 3 | [コマンド集](development/commands.md) | 開発時に使う npm / Docker / Prisma / Git のコマンド |
 | 4 | [CI / 自動化](development/ci.md) | GitHub Actions で実行しているタスク、Dependabot、ブランチ保護ルール |
-| 5 | [E2E シナリオテスト](../e2e/README.md) | Playwright のシナリオ一覧と実行方法 |
+| 5 | [CI・Dependabot 運用ガイド](development/ci-operations.md) | CI が失敗したときの直し方、Dependabot の PR を取り込むかの判断基準と手順、実例 |
+| 6 | [E2E シナリオテスト](../e2e/README.md) | Playwright のシナリオ一覧と実行方法 |
 
 ## 用語
 
