@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-e2e/
 /out/
 
 # production
@@ -49,3 +50,9 @@ next-env.d.ts
 
 # env (雛形は管理対象)
 !.env.example
+
+# Playwright (E2E)
+/e2e/.auth/
+/e2e/report/
+/e2e/results/
+/e2e/screenshots/

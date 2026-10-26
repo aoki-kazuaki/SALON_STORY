@@ -60,6 +60,7 @@ DB を直接書き換えるため、管理者承認やメール送信は経由�
 | --- | --- |
 | `npm run dev` | 開発サーバー起動 |
 | `npm test` | 単体テスト (Vitest) |
+| `npm run test:e2e` | E2E シナリオテスト (Playwright、専用 Docker を自動で起動。詳細は [e2e/README.md](e2e/README.md)) |
 | `npm run storybook` | コンポーネントカタログ (http://localhost:6006) |
 | `npm run lint` / `npm run typecheck` | ESLint / 型チェック |
 | `npm run db:studio` | DB の中身をブラウザで確認 (Prisma Studio) |
