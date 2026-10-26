@@ -16,6 +16,12 @@ on:
 permissions:
   contents: read
 
+# 同じ PR に新しいコミットが push されたら、古いコミット向けの実行をキャンセルする (結果は最新のコミットのものだけが使われるため)
+# main / develop への push と定期実行はキャンセルせず、コミットごとの結果を残す
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # 依存ライブラリ全体 (package-lock.json) の既知の脆弱性
   npm-audit:
