@@ -162,3 +162,15 @@ export const dateFormatMonthLabel = (month: number): string => {
   if (!abbreviation) return "";
   return `${abbreviation} ${MONTH_SEASON_EMOJIS[month]}`;
 };
+
+/**
+ * 日時を一定間隔の区切り (UNIX 時刻 0 起点) に切り捨てる
+ * - 署名付きURLの署名日時をそろえ、同じ区間内では同一URLを返す (ブラウザキャッシュを効かせる) 用途
+ * @param now 基準日時
+ * @param windowSeconds 区切りの間隔 (秒)
+ * @returns 区間の開始日時
+ */
+export const dateFloorToWindow = (now: Date, windowSeconds: number): Date => {
+  const windowMs = windowSeconds * 1000;
+  return new Date(Math.floor(now.getTime() / windowMs) * windowMs);
+};

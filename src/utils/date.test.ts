@@ -5,13 +5,14 @@ import { UNIT_TEST_BASE_DATE_KEY, UNIT_TEST_BASE_DATE_TIME, UNIT_TEST_INVALID_DA
 import {
   dateAddDays,
   dateCurrentTimeStamp,
-  dateFormatMonthDay,
-  dateFormatWeekday,
-  dateResolveMemoInputDefault,
+  dateFloorToWindow,
   dateFormatBadgeLabel,
   dateFormatKey,
+  dateFormatMonthDay,
   dateFormatMonthLabel,
   dateFormatRelative,
+  dateFormatWeekday,
+  dateResolveMemoInputDefault,
   dateTodayKey,
 } from "./date";
 
@@ -118,5 +119,29 @@ describe("dateFormatMonthLabel", () => {
   it("範囲外の月は空文字を返す", () => {
     expect(dateFormatMonthLabel(0)).toBe("");
     expect(dateFormatMonthLabel(13)).toBe("");
+  });
+});
+
+describe("dateFloorToWindow", () => {
+  /** 3日 (秒) */
+  const THREE_DAYS_SECONDS = 60 * 60 * 24 * 3;
+
+  it("同じ区間内の日時は同じ区間開始日時になる", () => {
+    const start = dateFloorToWindow(new Date("2026-10-25T00:00:00Z"), THREE_DAYS_SECONDS);
+    const later = dateFloorToWindow(new Date(start.getTime() + 1000 * (THREE_DAYS_SECONDS - 1)), THREE_DAYS_SECONDS);
+    expect(later.getTime()).toBe(start.getTime());
+  });
+
+  it("区間の境界を越えると次の区間開始日時になる", () => {
+    const start = dateFloorToWindow(new Date("2026-10-25T00:00:00Z"), THREE_DAYS_SECONDS);
+    const next = dateFloorToWindow(new Date(start.getTime() + 1000 * THREE_DAYS_SECONDS), THREE_DAYS_SECONDS);
+    expect(next.getTime() - start.getTime()).toBe(1000 * THREE_DAYS_SECONDS);
+  });
+
+  it("区間開始日時は基準日時以前で、区間の長さ未満しか離れない", () => {
+    const now = new Date("2026-10-26T13:45:12Z");
+    const start = dateFloorToWindow(now, THREE_DAYS_SECONDS);
+    expect(start.getTime()).toBeLessThanOrEqual(now.getTime());
+    expect(now.getTime() - start.getTime()).toBeLessThan(1000 * THREE_DAYS_SECONDS);
   });
 });
