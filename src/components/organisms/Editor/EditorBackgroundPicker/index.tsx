@@ -42,7 +42,7 @@ const EditorBackgroundPicker = ({ slots, activeImageUrl }: Props) => {
           </Link>
         </p>
       )}
-      <ul className="grid grid-cols-5 gap-2">
+      <ul className="grid grid-cols-4 gap-2">
         {slots.map((slot) => {
           /** キャンバスで使用中の背景かどうかの判定フラグ */
           const isActive: boolean = slot.imageUrl === activeImageUrl;
