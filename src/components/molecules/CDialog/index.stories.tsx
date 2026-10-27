@@ -22,3 +22,6 @@ type Story = StoryObj<typeof meta>;
 
 /** フォーム付きダイアログ */
 export const Default: Story = {};
+
+/** 表示時に入力欄へ自動フォーカスしない (登録済みメモの編集用。iOS でキーボードが勝手に開かない) */
+export const AutoFocusDisabled: Story = { args: { title: "メモを編集", isAutoFocusDisabled: true } };
