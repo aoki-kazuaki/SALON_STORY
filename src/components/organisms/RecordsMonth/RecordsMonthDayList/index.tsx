@@ -9,12 +9,16 @@ import CButton from "@/components/atoms/CButton";
 import CAccordion from "@/components/molecules/CAccordion";
 import CConfirmDialog from "@/components/molecules/CConfirmDialog";
 import MemoEditDialog from "@/components/organisms/App/MemoEditDialog";
-import { SCHEDULE_OPERATION_BADGE_TONES, SCHEDULE_SAVED_BADGES } from "@/constants/app";
+import {
+  SCHEDULE_MEMO_FUTURE_MONTH_COUNT,
+  SCHEDULE_OPERATION_BADGE_TONES,
+  SCHEDULE_SAVED_BADGES,
+} from "@/constants/app";
 import { apiDelete } from "@/lib/api/client";
 import { useEditorStore } from "@/stores/editorStore";
 import type { DateKey, ScheduleMemo, ScheduleOperationBadge } from "@/types";
 import type { ResDeleteScheduleClear } from "@/types/api/schedule/clear";
-import { dateFormatBadgeLabel, dateFormatRelative } from "@/utils/date";
+import { dateFormatBadgeLabel, dateFormatRelative, dateMaxRegistrableKey, dateTodayKey } from "@/utils/date";
 
 /** RecordsMonthDayList の Props */
 type Props = {
@@ -40,6 +44,8 @@ type EditTarget = {
   content: string;
   /** 入力済みメモの編集かどうか (false はメモ追加) */
   isEdit: boolean;
+  /** 登録可能な最終日 (メモ追加時のみ今月から3か月先の月末、編集時は "") */
+  maxDateKey: DateKey;
 };
 
 /** 当月の日別アコーディオン一覧 (入力済: 青バッジ・編集/クリア / 未入力: グレーバッジ・メモ追加) */
@@ -113,7 +119,9 @@ const RecordsMonthDayList = ({
                         <CButton
                           size="sm"
                           variant="outline"
-                          onClick={() => setEditTarget({ dateKey: day.dateKey, content: day.content, isEdit: true })}
+                          onClick={() =>
+                            setEditTarget({ dateKey: day.dateKey, content: day.content, isEdit: true, maxDateKey: "" })
+                          }
                         >
                           <PencilIcon />
                           編集
@@ -131,7 +139,14 @@ const RecordsMonthDayList = ({
                     size="sm"
                     variant="outline"
                     className="justify-self-start"
-                    onClick={() => setEditTarget({ dateKey: day.dateKey, content: "", isEdit: false })}
+                    onClick={() =>
+                      setEditTarget({
+                        dateKey: day.dateKey,
+                        content: "",
+                        isEdit: false,
+                        maxDateKey: dateMaxRegistrableKey(dateTodayKey(), SCHEDULE_MEMO_FUTURE_MONTH_COUNT),
+                      })
+                    }
                   >
                     <PlusIcon />
                     メモを追加
@@ -153,6 +168,7 @@ const RecordsMonthDayList = ({
         initialContent={editTarget?.content ?? ""}
         isDateLocked
         minDateKey=""
+        maxDateKey={editTarget?.maxDateKey ?? ""}
         isOverwrite={editTarget?.isEdit ?? false}
         onSaved={(memo, isCreated) => onMemoChanged(memo, SCHEDULE_SAVED_BADGES[String(isCreated) as "true" | "false"])}
       />

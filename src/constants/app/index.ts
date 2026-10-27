@@ -26,17 +26,20 @@ export const BACKGROUND_COMPRESS_INITIAL_QUALITY: number = 0.8;
 /** 背景画像の圧縮後の MIME タイプ (透過不要の写真のため、最も軽量で全ブラウザが出力できる JPEG に統一) */
 export const BACKGROUND_COMPRESS_CONTENT_TYPE: string = "image/jpeg";
 
-/** スケジュールメモの最大行数 (ストーリーズで多数の日付を1画面に収めるための上限) */
-export const SCHEDULE_MEMO_MAX_LINES: number = 3;
+/** スケジュールメモの最大行数 (長いメモはストーリーズ上で自動縮小し、収まらない場合はプレビューで警告する) */
+export const SCHEDULE_MEMO_MAX_LINES: number = 5;
 
 /** スケジュールメモ1行あたりの最大文字数 (例: "16:00〜 カットのみ" は11文字) */
-export const SCHEDULE_MEMO_MAX_LINE_LENGTH: number = 15;
+export const SCHEDULE_MEMO_MAX_LINE_LENGTH: number = 20;
 
-/** スケジュールメモ本文全体の最大文字数 (改行・前後の空白を含めた入力欄の上限) */
-export const SCHEDULE_MEMO_MAX_LENGTH: number = 60;
+/** スケジュールメモ本文全体の最大文字数 (改行・前後の空白を含めた入力欄の上限。5行×20文字＋改行・空白の余裕) */
+export const SCHEDULE_MEMO_MAX_LENGTH: number = 120;
 
 /** 凡例テキストの最大文字数 */
 export const LEGEND_MAX_LENGTH: number = 500;
+
+/** 新規メモを登録できる期間 (今月から何か月先の月末まで。来年分などの誤登録を防ぐ。登録データ一覧・月別一覧の月切り替えも同じ範囲まで選択可能) */
+export const SCHEDULE_MEMO_FUTURE_MONTH_COUNT: number = 3;
 
 /** 登録データ一覧で初期展開する直近年数 */
 export const RECORDS_DEFAULT_OPEN_YEAR_COUNT: number = 2;

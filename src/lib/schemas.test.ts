@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { schemaLoginForm, schemaMemoForm, schemaPassword, schemaScheduleSaveBody } from "./schemas";
+import {
+  schemaBuildMemoForm,
+  schemaLoginForm,
+  schemaMemoForm,
+  schemaPassword,
+  schemaScheduleSaveBody,
+} from "./schemas";
 
 /** メモ入力フォームの値を検証する */
 const parseMemo = (content: string) => schemaMemoForm.safeParse({ dateKey: "2026-10-25", content });
@@ -24,12 +30,16 @@ describe("schemaMemoForm (メモ本文の入力制限)", () => {
     expect(parseMemo("\n 10:00 \n\n13:15\n14:00\n").success).toBe(true);
   });
 
-  it("4行以上は入力不可", () => {
-    expect(errorMessages("10:00\n11:00\n13:15\n14:00")).toContain("3行以内で入力してください");
+  it("5行・1行20文字までは入力可能", () => {
+    expect(parseMemo("10:00〜 カット・カラーOK\n11:00\n13:15\n14:00\n12345678901234567890").success).toBe(true);
   });
 
-  it("1行16文字以上は入力不可", () => {
-    expect(errorMessages("1234567890123456")).toContain("1行15文字以内で入力してください");
+  it("6行以上は入力不可", () => {
+    expect(errorMessages("10:00\n11:00\n13:15\n14:00\n15:00\n16:00")).toContain("5行以内で入力してください");
+  });
+
+  it("1行21文字以上は入力不可", () => {
+    expect(errorMessages("123456789012345678901")).toContain("1行20文字以内で入力してください");
   });
 
   it("空・空白のみは入力不可", () => {
@@ -41,9 +51,9 @@ describe("schemaScheduleSaveBody (API 側のメモ本文の検証)", () => {
   it("フォームと同じ行数・文字数制限を適用する", () => {
     const parse = (content: string) =>
       schemaScheduleSaveBody.safeParse({ dateKey: "2026-10-25", content, overwrite: false }).success;
-    expect(parse("10:00\n13:15\n14:00")).toBe(true);
-    expect(parse("10:00\n11:00\n13:15\n14:00")).toBe(false);
-    expect(parse("1234567890123456")).toBe(false);
+    expect(parse("10:00\n11:00\n13:15\n14:00\n15:00")).toBe(true);
+    expect(parse("10:00\n11:00\n13:15\n14:00\n15:00\n16:00")).toBe(false);
+    expect(parse("123456789012345678901")).toBe(false);
   });
 });
 
@@ -70,5 +80,26 @@ describe("schemaLoginForm (ログインIDまたはメールアドレス)", () =>
 
   it("未入力はエラー", () => {
     expect(schemaLoginForm.safeParse({ identifier: " ", password: "x" }).success).toBe(false);
+  });
+});
+
+describe("schemaBuildMemoForm (新規登録できる日付の上限)", () => {
+  /** 上限日を指定してメモ入力フォームの値を検証する */
+  const parseWithMax = (dateKey: string, maxDateKey: string) =>
+    schemaBuildMemoForm(maxDateKey).safeParse({ dateKey, content: "10:00" });
+
+  it("上限日以前は登録可能", () => {
+    expect(parseWithMax("2027-01-31", "2027-01-31").success).toBe(true);
+  });
+
+  it("上限日より後は日付のエラーになる", () => {
+    const result = parseWithMax("2027-02-01", "2027-01-31");
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(["dateKey"]);
+    expect(result.error?.issues[0].message).toBe("新規のメモは3か月先の月末 (1/31(日)) までの日付で登録してください");
+  });
+
+  it("上限日が空文字の場合は制限しない", () => {
+    expect(parseWithMax("2030-12-31", "").success).toBe(true);
   });
 });

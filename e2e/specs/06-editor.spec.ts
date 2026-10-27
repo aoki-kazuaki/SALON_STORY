@@ -1,6 +1,11 @@
 import type { Locator, Page } from "@playwright/test";
 
-import { E2E_OWNER_STORAGE_STATE, e2eBuildScenarioMemos, e2eDateKeyAfter } from "../support/data";
+import {
+  E2E_LONG_MEMO_CONTENT,
+  E2E_OWNER_STORAGE_STATE,
+  e2eBuildScenarioMemos,
+  e2eDateKeyAfter,
+} from "../support/data";
 import { e2eScreenshot, e2eToast, expect, test } from "../support/fixtures";
 
 test.use({ storageState: E2E_OWNER_STORAGE_STATE });
@@ -42,6 +47,17 @@ const selectPeriod = async (page: Page, days: number): Promise<void> => {
   await expect(page.getByText("読み込み中…").filter({ visible: true })).toHaveCount(0);
   await expect(slotCheckboxes(page).first()).toBeVisible();
 };
+
+/** 指定日のメモを API で上書き保存する */
+const overwriteMemos = async (page: Page, dateKeys: string[], content: string): Promise<void> => {
+  for (const dateKey of dateKeys) {
+    const response = await page.request.post("/api/schedule/save", { data: { dateKey, content, overwrite: true } });
+    expect(response.ok()).toBe(true);
+  }
+};
+
+/** はみ出し警告 (自動縮小しても1画面に収まらない場合の警告文) */
+const overflowAlert = (page: Page): Locator => page.getByText("下の方の日付が1画面に表示しきれていません");
 
 /** タブを切り替える */
 const switchTab = async (page: Page, name: "編集・選択" | "プレビュー・保存"): Promise<void> => {
@@ -175,7 +191,7 @@ test.describe("ストーリーズエディタ", () => {
     await selectPeriod(page, 28);
     await switchTab(page, "プレビュー・保存");
     await expect(canvas(page)).toHaveAttribute("data-density", "sm");
-    await expect(page.getByText("下の方の日付が1画面に表示しきれていません")).toHaveCount(0);
+    await expect(overflowAlert(page)).toHaveCount(0);
     await e2eScreenshot(page, "06-editor-preview-28days", testInfo, { fullPage: true });
 
     await page.getByRole("button", { name: "全画面プレビュー" }).click();
@@ -199,5 +215,36 @@ test.describe("ストーリーズエディタ", () => {
     await expect(canvasBadges(page)).toHaveCount(count);
     await page.getByRole("button", { name: "全画面プレビュー" }).click();
     await e2eScreenshot(page, `06-editor-fullscreen-month-${busiestMonth}-${count}items`, testInfo);
+  });
+
+  // 以降のシナリオはメモを長い内容に書き換えるため、ファイルの最後に置く
+  test("5行の長いメモを含む7日間を表示する__文字が自動的に小さくなり1画面に収まる", async ({ page }, testInfo) => {
+    await overwriteMemos(page, [e2eDateKeyAfter(2), e2eDateKeyAfter(3)], E2E_LONG_MEMO_CONTENT);
+    await openEditor(page);
+    await selectPeriod(page, 7);
+    await switchTab(page, "プレビュー・保存");
+
+    await expect(canvas(page)).toContainText("※ご新規様はDMからお問い合わせ");
+    await expect(overflowAlert(page)).toHaveCount(0);
+    const fitScale = await canvas(page)
+      .getByTestId("story-canvas-fit-area")
+      .evaluate((element) => Number(element.style.getPropertyValue("--fit-scale")));
+    expect(fitScale).toBeLessThan(1);
+    await e2eScreenshot(page, "06-editor-preview-long-memo", testInfo, { fullPage: true });
+  });
+
+  test("全日を5行の長いメモにして28日間を表示する__入りきらない旨が通知される", async ({ page }, testInfo) => {
+    const lastDateKey = e2eDateKeyAfter(27);
+    const dateKeys = e2eBuildScenarioMemos()
+      .map((memo) => memo.dateKey)
+      .filter((dateKey) => dateKey >= e2eDateKeyAfter(0) && dateKey <= lastDateKey);
+    await overwriteMemos(page, dateKeys, E2E_LONG_MEMO_CONTENT);
+    await openEditor(page);
+    await selectPeriod(page, 28);
+    await switchTab(page, "プレビュー・保存");
+
+    await expect(e2eToast(page, "1画面に入りきらない空き枠があります")).toBeVisible();
+    await expect(overflowAlert(page)).toBeVisible();
+    await e2eScreenshot(page, "06-editor-preview-overflow", testInfo, { fullPage: true });
   });
 });

@@ -14,7 +14,7 @@ import CDialog from "@/components/molecules/CDialog";
 import CFormField from "@/components/molecules/CFormField";
 import { SCHEDULE_MEMO_MAX_LENGTH, SCHEDULE_MEMO_MAX_LINE_LENGTH, SCHEDULE_MEMO_MAX_LINES } from "@/constants/app";
 import { apiPost } from "@/lib/api/client";
-import { schemaMemoForm } from "@/lib/schemas";
+import { schemaBuildMemoForm, type schemaMemoForm } from "@/lib/schemas";
 import { useEditorStore } from "@/stores/editorStore";
 import { useMemoInputStore } from "@/stores/memoInputStore";
 import type { DateKey, ScheduleMemo } from "@/types";
@@ -40,6 +40,8 @@ type Props = {
   isDateLocked: boolean;
   /** 選択可能な最小日付 ("" は制限なし) */
   minDateKey: DateKey;
+  /** 選択可能な最大日付 ("" は制限なし。新規登録時は今月から3か月先の月末) */
+  maxDateKey: DateKey;
   /** 既存メモを確認なしで上書きする (編集時) か */
   isOverwrite: boolean;
   /** 保存完了時に呼ばれる */
@@ -57,6 +59,8 @@ type ConflictState = {
 /**
  * スケジュールメモの入力・編集ダイアログ
  * - 入力済みの日付に新規保存しようとした場合 (409) は、新旧比較の上書き確認ダイアログを表示
+ * - 日付固定時は入力欄を disabled にする (iOS Safari は readonly の date 入力でもピッカーを開くため)。
+ *   disabled の入力欄は送信値に含まれないため、値は hidden 入力で保持する
  */
 const MemoEditDialog = ({
   open,
@@ -66,6 +70,7 @@ const MemoEditDialog = ({
   initialContent,
   isDateLocked,
   minDateKey,
+  maxDateKey,
   isOverwrite,
   onSaved,
 }: Props) => {
@@ -78,7 +83,7 @@ const MemoEditDialog = ({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<MemoFormValues>({
-    resolver: zodResolver(schemaMemoForm),
+    resolver: zodResolver(schemaBuildMemoForm(maxDateKey)),
     defaultValues: { dateKey: initialDateKey, content: initialContent },
   });
 
@@ -133,20 +138,27 @@ const MemoEditDialog = ({
       >
         <form id="memo-edit-form" className="grid gap-4" onSubmit={handleSubmit((values) => save(values, isOverwrite))}>
           <CFormField htmlFor="memo-date" label="日付" error={errors.dateKey?.message ?? ""}>
-            <CInput
-              id="memo-date"
-              type="date"
-              min={minDateKey}
-              readOnly={isDateLocked}
-              className="read-only:bg-muted"
-              {...register("dateKey")}
-            />
+            {isDateLocked && (
+              <>
+                <CInput
+                  id="memo-date"
+                  type="date"
+                  value={initialDateKey}
+                  disabled
+                  className="disabled:bg-muted disabled:opacity-100"
+                />
+                <input type="hidden" {...register("dateKey")} />
+              </>
+            )}
+            {!isDateLocked && (
+              <CInput id="memo-date" type="date" min={minDateKey} max={maxDateKey} {...register("dateKey")} />
+            )}
           </CFormField>
           <CFormField
             htmlFor="memo-content"
             label="メモ"
             error={errors.content?.message ?? ""}
-            hint={`最大${SCHEDULE_MEMO_MAX_LINES}行・1行${SCHEDULE_MEMO_MAX_LINE_LENGTH}文字まで (時間帯ごとに改行がおすすめ)`}
+            hint={`最大${SCHEDULE_MEMO_MAX_LINES}行・1行${SCHEDULE_MEMO_MAX_LINE_LENGTH}文字まで (時間帯ごとに改行がおすすめ。長いメモはストーリーズ上で文字が自動的に小さくなります)`}
           >
             <CTextarea
               id="memo-content"

@@ -12,6 +12,7 @@ import {
   dateFormatMonthLabel,
   dateFormatRelative,
   dateFormatWeekday,
+  dateMaxRegistrableKey,
   dateResolveMemoInputDefault,
   dateTodayKey,
 } from "./date";
@@ -143,5 +144,22 @@ describe("dateFloorToWindow", () => {
     const start = dateFloorToWindow(now, THREE_DAYS_SECONDS);
     expect(start.getTime()).toBeLessThanOrEqual(now.getTime());
     expect(now.getTime() - start.getTime()).toBeLessThan(1000 * THREE_DAYS_SECONDS);
+  });
+});
+
+describe("dateMaxRegistrableKey", () => {
+  it.each([
+    [UNIT_TEST_BASE_DATE_KEY, 3, "2027-01-31"],
+    ["2026-10-01", 3, "2027-01-31"],
+    ["2026-11-30", 3, "2027-02-28"],
+    ["2027-10-31", 4, "2028-02-29"],
+    [UNIT_TEST_BASE_DATE_KEY, 0, "2026-10-31"],
+  ])("基準日 %s・%iか月 → %s", (baseDateKey, futureMonthCount, expected) => {
+    expect(dateMaxRegistrableKey(baseDateKey, futureMonthCount)).toBe(expected);
+  });
+
+  it("空文字・不正値は空文字を返す", () => {
+    expect(dateMaxRegistrableKey("", 3)).toBe("");
+    expect(dateMaxRegistrableKey(UNIT_TEST_INVALID_DATE, 3)).toBe("");
   });
 });
