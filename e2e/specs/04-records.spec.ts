@@ -90,6 +90,9 @@ test.describe("登録データ一覧・月別一覧", () => {
 
     const dialog = page.getByRole("dialog", { name: "メモを編集" });
     await expect(dialog.locator("#memo-date")).toBeDisabled();
+    // iOS でキーボードが勝手に開かないよう、メモ欄には自動フォーカスしない
+    await expect(dialog).toBeFocused();
+    await expect(dialog.locator("#memo-content")).not.toBeFocused();
     await dialog.locator("#memo-content").fill("19:00〜 最終枠");
     await page.getByRole("button", { name: "保存する" }).click();
 

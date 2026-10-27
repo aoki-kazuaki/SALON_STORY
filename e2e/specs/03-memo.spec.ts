@@ -103,6 +103,26 @@ test.describe("ダッシュボード (メモ入力・凡例テキスト)", () =>
     await expect(e2eToast(page, `${dateFormatBadgeLabel(dateKey)} のメモを保存しました`)).toBeVisible();
   });
 
+  test("入力済みの日付を選ぶ__登録済みのメモが読み込まれ手入力した内容は上書きされない", async ({ page }) => {
+    const filledDateKey = e2eDateKeyAfter(1);
+    const emptyDateKey = e2eDateKeyAfter(9);
+    const dialog = await openMemoDialog(page);
+    const content = dialog.locator("#memo-content");
+
+    await dialog.locator("#memo-date").fill(filledDateKey);
+    await expect(content).toHaveValue("11:00〜 カットのみ");
+    await expect(dialog.getByText("この日付の登録済みメモを表示しています。")).toBeVisible();
+
+    await dialog.locator("#memo-date").fill(emptyDateKey);
+    await expect(content).toHaveValue("");
+    await expect(dialog.getByText("この日付の登録済みメモを表示しています。")).toHaveCount(0);
+
+    await content.fill("17:00〜");
+    await dialog.locator("#memo-date").fill(filledDateKey);
+    await expect(dialog.getByText("この日付の登録済みメモを表示しています。")).toHaveCount(0);
+    await expect(content).toHaveValue("17:00〜");
+  });
+
   test("凡例テキストを編集する__プレビューに反映され再度開いても保持される", async ({ page }, testInfo) => {
     await page.goto("/dashboard");
     await page.getByRole("button", { name: "凡例テキストを編集" }).click();

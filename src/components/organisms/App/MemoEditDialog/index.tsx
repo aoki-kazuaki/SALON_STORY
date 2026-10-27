@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 
@@ -13,13 +13,14 @@ import CConfirmDialog from "@/components/molecules/CConfirmDialog";
 import CDialog from "@/components/molecules/CDialog";
 import CFormField from "@/components/molecules/CFormField";
 import { SCHEDULE_MEMO_MAX_LENGTH, SCHEDULE_MEMO_MAX_LINE_LENGTH, SCHEDULE_MEMO_MAX_LINES } from "@/constants/app";
-import { apiPost } from "@/lib/api/client";
+import { apiGet, apiPost } from "@/lib/api/client";
 import { schemaBuildMemoForm, type schemaMemoForm } from "@/lib/schemas";
 import { useEditorStore } from "@/stores/editorStore";
 import { useMemoInputStore } from "@/stores/memoInputStore";
 import type { DateKey, ScheduleMemo } from "@/types";
+import type { ResGetScheduleList } from "@/types/api/schedule/list";
 import type { ResPostScheduleSave, ResPostScheduleSaveConflict } from "@/types/api/schedule/save";
-import { dateFormatBadgeLabel } from "@/utils/date";
+import { dateFormatBadgeLabel, dateFormatKey } from "@/utils/date";
 
 /** メモ入力フォームの値 */
 type MemoFormValues = z.infer<typeof schemaMemoForm>;
@@ -59,8 +60,11 @@ type ConflictState = {
 /**
  * スケジュールメモの入力・編集ダイアログ
  * - 入力済みの日付に新規保存しようとした場合 (409) は、新旧比較の上書き確認ダイアログを表示
- * - 日付固定時は入力欄を disabled にする (iOS Safari は readonly の date 入力でもピッカーを開くため)。
- *   disabled の入力欄は送信値に含まれないため、値は hidden 入力で保持する
+ * - 日付固定時 (登録済みメモの編集・月別一覧からの追加) は入力欄を disabled にする (iOS Safari は readonly の date 入力でもピッカーを開くため)。
+ *   disabled の入力欄は送信値に含まれないため、値は hidden 入力で保持する。
+ *   また表示時にメモ欄へ自動フォーカスしない (iOS でキーボードが勝手に開き、入力しづらくなるため)
+ * - 日付選択時 (ダッシュボードからの新規入力) は、選んだ日付に登録済みのメモがあればメモ欄に読み込む。
+ *   ただしユーザーが手入力した内容は上書きしない
  */
 const MemoEditDialog = ({
   open,
@@ -77,20 +81,61 @@ const MemoEditDialog = ({
   const [conflict, setConflict] = useState<ConflictState | null>(null);
   const setLastInputDateKey = useMemoInputStore((state) => state.setLastInputDateKey);
   const invalidateMemos = useEditorStore((state) => state.invalidateMemos);
+  /** 直前に登録済みメモから読み込んだ本文 (手入力との判別用。未読み込みは "") */
+  const loadedContentRef = useRef("");
+  const [loadedContent, setLoadedContent] = useState("");
   const {
     register,
     handleSubmit,
     reset,
+    control,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<MemoFormValues>({
     resolver: zodResolver(schemaBuildMemoForm(maxDateKey)),
     defaultValues: { dateKey: initialDateKey, content: initialContent },
   });
+  const selectedDateKey = useWatch({ control, name: "dateKey" });
+  const currentContent = useWatch({ control, name: "content" });
 
   useEffect(() => {
     if (!open) return;
+    loadedContentRef.current = "";
     reset({ dateKey: initialDateKey, content: initialContent });
   }, [open, initialDateKey, initialContent, reset]);
+
+  // 選択中の日付に登録済みのメモがあればメモ欄に読み込む (日付選択時のみ。切り替え時に古い応答は破棄する)
+  useEffect(() => {
+    if (!open) return;
+    if (isDateLocked) return;
+    if (selectedDateKey === "") return;
+    if (!(dateFormatKey(selectedDateKey) === selectedDateKey)) return;
+    let isStale = false;
+    const loadExistingMemo = async () => {
+      const result = await apiGet<ResGetScheduleList>("/api/schedule/list", {
+        startDate: selectedDateKey,
+        endDate: selectedDateKey,
+      });
+      if (isStale) return;
+      if (!result.ok) return;
+      const typedContent = getValues("content");
+      /** ユーザーが手入力した内容があるか (空でも、直前に読み込んだ内容のままでもない) */
+      const hasTypedContent: boolean = !(typedContent === "") && !(typedContent === loadedContentRef.current);
+      if (hasTypedContent) return;
+      const existingContent = result.data.memos[0]?.content ?? "";
+      loadedContentRef.current = existingContent;
+      setLoadedContent(existingContent);
+      setValue("content", existingContent);
+    };
+    loadExistingMemo();
+    return () => {
+      isStale = true;
+    };
+  }, [open, isDateLocked, selectedDateKey, getValues, setValue]);
+
+  /** 登録済みメモを読み込んだ内容のまま表示しているかどうかの判定フラグ */
+  const isShowingExistingMemo: boolean = !isDateLocked && !(loadedContent === "") && currentContent === loadedContent;
 
   /** 保存 API を呼び出す (409 の場合は比較ダイアログを開く) */
   const save = async (values: MemoFormValues, overwrite: boolean) => {
@@ -128,6 +173,7 @@ const MemoEditDialog = ({
       <CDialog
         open={open}
         onOpenChange={onOpenChange}
+        isAutoFocusDisabled={isDateLocked}
         title={title}
         description="空き枠の時間帯などを入力してください。入力した内容は改行も含めてそのままストーリーズのバッジに表示されます。"
         footer={
@@ -160,6 +206,11 @@ const MemoEditDialog = ({
             error={errors.content?.message ?? ""}
             hint={`最大${SCHEDULE_MEMO_MAX_LINES}行・1行${SCHEDULE_MEMO_MAX_LINE_LENGTH}文字まで (時間帯ごとに改行がおすすめ。長いメモはストーリーズ上で文字が自動的に小さくなります)`}
           >
+            {isShowingExistingMemo && (
+              <p className="rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                この日付の登録済みメモを表示しています。保存すると、登録済みの内容と比較して上書きするか確認します。
+              </p>
+            )}
             <CTextarea
               id="memo-content"
               rows={SCHEDULE_MEMO_MAX_LINES}
