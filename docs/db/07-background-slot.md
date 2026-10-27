@@ -17,7 +17,7 @@
 | オブジェクトキー | objectKey | TEXT | | | 〇 | | - | - | `backgrounds/<ユーザーID>/slot<番号>-<UUID>.<拡張子>`。アップロードごとに新しいキー |
 | MIMEタイプ | contentType | TEXT | | | 〇 | | `image/jpeg` / `image/png` / `image/webp` | - | 画面側で圧縮するため、通常は `image/jpeg` |
 | 作成日時 | createdAt | TIMESTAMP(3) | | | 〇 | | - | `CURRENT_TIMESTAMP` | |
-| 更新日時 | updatedAt | TIMESTAMP(3) | | | 〇 | | - | - | 更新時に自動更新 (上書き変更時) |
+| 更新日時 | updatedAt | TIMESTAMP(3) | | | 〇 | | - | - | 更新時に自動更新 (上書変更時) |
 
 ※ `userId` と `slotNumber` の組み合わせで一意
 
