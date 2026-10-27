@@ -153,6 +153,19 @@ export const dateResolveMemoInputDefault = (lastInputDateKey: DateKey, todayKey:
 };
 
 /**
+ * 新規メモを登録できる最終日を返す (基準日の月から指定か月先の月末)
+ * @param baseDateKey 基準日 (通常は今日)
+ * @param futureMonthCount 何か月先まで登録可能とするか
+ * @returns "YYYY-MM-DD" 形式の最終日 (例: 基準日 2026-10-25・3か月 → "2027-01-31"、空文字・不正値の場合は "")
+ */
+export const dateMaxRegistrableKey = (baseDateKey: DateKey, futureMonthCount: number): DateKey => {
+  if (baseDateKey === "") return "";
+  const base = dayjs(baseDateKey);
+  if (!base.isValid()) return "";
+  return base.startOf("month").add(futureMonthCount, "month").endOf("month").format("YYYY-MM-DD");
+};
+
+/**
  * 月を英語略称＋季節絵文字の表示ラベルに変換する (登録データ一覧の月リスト用)
  * @param month 月 (1〜12)
  * @returns "Oct 🍁" 形式のラベル (範囲外の場合は "")

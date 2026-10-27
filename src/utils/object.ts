@@ -11,6 +11,26 @@ export type EditorRange = {
   endDate: DateKey;
 };
 
+/** 年月 */
+export type YearMonth = {
+  /** 西暦年 */
+  year: number;
+  /** 月 (1〜12) */
+  month: number;
+};
+
+/**
+ * 年月を指定か月ずらす (月別一覧の前の月・次の月の算出用)
+ * @param year 西暦年
+ * @param month 月 (1〜12)
+ * @param diff ずらす月数 (負数で過去方向)
+ * @returns ずらした後の年月 (例: 2026年12月 + 1 → 2027年1月)
+ */
+export const objectShiftYearMonth = (year: number, month: number, diff: number): YearMonth => {
+  const shifted = dayjs(new Date(year, month - 1, 1)).add(diff, "month");
+  return { year: shifted.year(), month: shifted.month() + 1 };
+};
+
 /**
  * 指定月の1日〜末日の期間を算出する
  * @param year 西暦年

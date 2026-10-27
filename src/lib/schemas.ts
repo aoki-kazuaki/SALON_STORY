@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   BACKGROUND_SLOT_NUMBERS,
   LEGEND_MAX_LENGTH,
+  SCHEDULE_MEMO_FUTURE_MONTH_COUNT,
   SCHEDULE_MEMO_MAX_LENGTH,
   SCHEDULE_MEMO_MAX_LINE_LENGTH,
   SCHEDULE_MEMO_MAX_LINES,
@@ -16,7 +17,9 @@ import {
   AUTH_USERNAME_MAX_LENGTH,
   AUTH_USERNAME_MIN_LENGTH,
 } from "@/constants/auth";
+import type { DateKey } from "@/types";
 import { arraySplitLines } from "@/utils/array";
+import { dateFormatBadgeLabel } from "@/utils/date";
 
 // -----------------------------------------------------------------------------
 // 共通パーツ
@@ -31,7 +34,7 @@ const dateKeySchema = z
 /** 背景スロット番号 (1〜4) */
 const slotNumberSchema = z.number().int().min(1).max(BACKGROUND_SLOT_NUMBERS.length);
 
-/** スケジュールメモ本文 (空文字可、最大3行・1行15文字まで。空行・前後の空白は数えない) */
+/** スケジュールメモ本文 (空文字可、最大5行・1行20文字まで。空行・前後の空白は数えない) */
 const memoContentSchema = z
   .string()
   .max(SCHEDULE_MEMO_MAX_LENGTH, `${SCHEDULE_MEMO_MAX_LENGTH}文字以内で入力してください`)
@@ -160,6 +163,17 @@ export const schemaMemoForm = z.object({
   dateKey: dateKeySchema,
   content: memoContentSchema.refine((value) => arraySplitLines(value).length > 0, "メモを入力してください"),
 });
+
+/**
+ * 新規登録できる日付の上限を加えたスケジュールメモ入力フォームを生成する
+ * @param maxDateKey 登録可能な最終日 ("" は上限なし。入力済みメモの編集時)
+ * @returns スケジュールメモ入力フォームのスキーマ
+ */
+export const schemaBuildMemoForm = (maxDateKey: DateKey) =>
+  schemaMemoForm.refine((value) => maxDateKey === "" || value.dateKey <= maxDateKey, {
+    message: `新規のメモは${SCHEDULE_MEMO_FUTURE_MONTH_COUNT}か月先の月末 (${dateFormatBadgeLabel(maxDateKey)}) までの日付で登録してください`,
+    path: ["dateKey"],
+  });
 
 /** 凡例テキスト編集フォーム */
 export const schemaLegendForm = z.object({

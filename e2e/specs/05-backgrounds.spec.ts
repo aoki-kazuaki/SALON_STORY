@@ -88,7 +88,7 @@ test.describe("背景画像管理", () => {
     await e2eScreenshot(page, "05-backgrounds-filled", testInfo, { fullPage: true });
   });
 
-  test("画像を上書き変更する__新しい画像に差し替わる", async ({ page }) => {
+  test("画像を上書変更する__新しい画像に差し替わる", async ({ page }) => {
     await openBackgrounds(page);
     const before = await thumbnailUrl(page, 2);
     const image = await e2eCreateJpeg(page, {

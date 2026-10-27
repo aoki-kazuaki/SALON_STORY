@@ -34,11 +34,22 @@ const dayItemsByStatus = (page: Page, status: "入力済" | "未入力"): Locato
 const openedDayItems = (page: Page): Locator => page.locator('[data-slot="accordion-item"][data-state="open"]:visible');
 
 test.describe("登録データ一覧・月別一覧", () => {
-  test("登録データ一覧を開く__登録のある月だけが新しい月から順に表示される", async ({ page }, testInfo) => {
+  test("登録データ一覧を開く__登録のある月と3か月先までの月が新しい月から順に表示され今月が強調される", async ({
+    page,
+  }, testInfo) => {
     await page.goto("/dashboard/records");
     const year = String(dayjs().year());
     const monthLinks = page.locator(`a[href^="/dashboard/records/${year}/"]`);
     await expect(monthLinks.first()).toBeVisible();
+
+    const today = dayjs();
+    const currentMonthLink = page.locator(`a[href="/dashboard/records/${today.year()}/${today.month() + 1}"]`);
+    await expect(currentMonthLink).toHaveAttribute("aria-current", "date");
+    await expect(currentMonthLink).toContainText("今月");
+    const limitMonth = today.add(3, "month");
+    await expect(
+      page.locator(`a[href="/dashboard/records/${limitMonth.year()}/${limitMonth.month() + 1}"]`),
+    ).toBeVisible();
 
     const months = (await monthLinks.evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""))).map(
       (href) => Number(href.split("/").at(-1)),
@@ -78,7 +89,7 @@ test.describe("登録データ一覧・月別一覧", () => {
     await item.getByRole("button", { name: "編集" }).click();
 
     const dialog = page.getByRole("dialog", { name: "メモを編集" });
-    await expect(dialog.locator("#memo-date")).toHaveAttribute("readonly");
+    await expect(dialog.locator("#memo-date")).toBeDisabled();
     await dialog.locator("#memo-content").fill("19:00〜 最終枠");
     await page.getByRole("button", { name: "保存する" }).click();
 
@@ -119,6 +130,32 @@ test.describe("登録データ一覧・月別一覧", () => {
     await expect(addedItem).toContainText("入力済");
     await expect(addedItem).toContainText("NEW");
     await e2eScreenshot(page, "04-records-month-badges", testInfo);
+  });
+
+  test("前の月・次の月で切り替える__3か月先の月では次の月が押せない", async ({ page }) => {
+    const today = dayjs();
+    await page.goto(`/dashboard/records/${today.year()}/${today.month() + 1}`);
+    const navigation = page.getByRole("navigation", { name: "月の切り替え" });
+    await expect(navigation).toContainText("今月");
+
+    const limitMonth = today.add(3, "month");
+    for (let index = 1; index <= 3; index += 1) {
+      const target = today.add(index, "month");
+      await navigation.getByRole("link", { name: `${target.month() + 1}月`, exact: true }).click();
+      await expect(
+        page.getByRole("heading", { name: `${target.year()}年${target.month() + 1}月の登録データ` }),
+      ).toBeVisible();
+    }
+    await expect(navigation).not.toContainText("今月");
+    await expect(
+      navigation.getByRole("button", { name: `${limitMonth.add(1, "month").month() + 1}月`, exact: true }),
+    ).toBeDisabled();
+
+    const prevMonth = limitMonth.subtract(1, "month");
+    await navigation.getByRole("link", { name: `${prevMonth.month() + 1}月`, exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: `${prevMonth.year()}年${prevMonth.month() + 1}月の登録データ` }),
+    ).toBeVisible();
   });
 
   test("存在しない年月を開く__年月が正しくない旨が表示される", async ({ page }) => {

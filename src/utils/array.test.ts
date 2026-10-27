@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { UNIT_TEST_BASE_DATE_KEY } from "@/constants/unitTest";
+import { UNIT_TEST_BASE_DATE_KEY, UNIT_TEST_INVALID_DATE } from "@/constants/unitTest";
 import type { ScheduleMemo } from "@/types";
 
 import {
@@ -9,6 +9,7 @@ import {
   arrayBuildMonthOptions,
   arrayBuildScheduleYearSummaries,
   arrayBuildStoryBadgeItems,
+  arrayMergeUpcomingMonths,
   arraySplitLines,
 } from "./array";
 
@@ -127,5 +128,39 @@ describe("arrayBuildStoryBadgeItems", () => {
 
   it("対象がない場合は空配列を返す", () => {
     expect(arrayBuildStoryBadgeItems([], new Set(), UNIT_TEST_BASE_DATE_KEY)).toEqual([]);
+  });
+});
+
+describe("arrayMergeUpcomingMonths", () => {
+  it("今月から指定か月先までの未入力の月を件数 0 で追加し、年降順・月降順に並べる", () => {
+    const years = arrayBuildScheduleYearSummaries(["2026-03-01", "2026-11-05", "2026-11-06"]);
+    expect(arrayMergeUpcomingMonths(years, UNIT_TEST_BASE_DATE_KEY, 3)).toEqual([
+      { year: 2027, months: [{ month: 1, count: 0 }] },
+      {
+        year: 2026,
+        months: [
+          { month: 12, count: 0 },
+          { month: 11, count: 2 },
+          { month: 10, count: 0 },
+          { month: 3, count: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it("データがない場合も今月から指定か月先までの月を返す", () => {
+    expect(arrayMergeUpcomingMonths([], "2026-10-31", 1)).toEqual([
+      {
+        year: 2026,
+        months: [
+          { month: 11, count: 0 },
+          { month: 10, count: 0 },
+        ],
+      },
+    ]);
+  });
+
+  it("基準日が不正な場合は元の集計をそのまま返す", () => {
+    expect(arrayMergeUpcomingMonths([], UNIT_TEST_INVALID_DATE, 3)).toEqual([]);
   });
 });

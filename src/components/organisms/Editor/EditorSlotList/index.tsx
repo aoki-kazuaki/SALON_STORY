@@ -130,6 +130,7 @@ const EditorSlotList = ({ memos, isLoading, operationBadges, onMemoChanged }: Pr
         initialContent={editTarget?.content ?? ""}
         isDateLocked
         minDateKey=""
+        maxDateKey=""
         isOverwrite
         onSaved={(memo, isCreated) => onMemoChanged(memo, SCHEDULE_SAVED_BADGES[String(isCreated) as "true" | "false"])}
       />
