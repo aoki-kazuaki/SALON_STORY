@@ -22,6 +22,21 @@ const BREADCRUMB_SEGMENT_LABELS: Record<string, string> = {
 };
 
 /**
+ * 年・月ごとの件数を、年降順・月降順 (12月→1月) の集計に変換する
+ * @param counts 年 → (月 → 件数) の対応
+ * @returns 年降順・月降順の集計
+ */
+const sortScheduleYearSummaries = (counts: Map<number, Map<number, number>>): ScheduleYearSummary[] =>
+  [...counts.entries()]
+    .sort(([yearA], [yearB]) => yearB - yearA)
+    .map(([year, monthCounts]) => ({
+      year,
+      months: [...monthCounts.entries()]
+        .sort(([monthA], [monthB]) => monthB - monthA)
+        .map(([month, count]) => ({ month, count })),
+    }));
+
+/**
  * 日付キー一覧から、データが存在する年・月の集計を生成する
  * @param dateKeys 入力済みメモの日付キー一覧
  * @returns 年降順・月降順 (12月→1月) の集計 (該当なしは [])
@@ -35,15 +50,40 @@ export const arrayBuildScheduleYearSummaries = (dateKeys: DateKey[]): ScheduleYe
     monthCounts.set(month, (monthCounts.get(month) ?? 0) + 1);
     counts.set(year, monthCounts);
   });
+  return sortScheduleYearSummaries(counts);
+};
 
-  return [...counts.entries()]
-    .sort(([yearA], [yearB]) => yearB - yearA)
-    .map(([year, monthCounts]) => ({
-      year,
-      months: [...monthCounts.entries()]
-        .sort(([monthA], [monthB]) => monthB - monthA)
-        .map(([month, count]) => ({ month, count })),
-    }));
+/**
+ * データが存在する年・月の集計に、今月から指定か月先までの月を (未入力でも) 追加する
+ * - 追加した月は件数 0 として扱い、DB にはレコードを作らない (表示のためだけのクライアント側の補完)
+ * @param years データが存在する年・月の集計
+ * @param baseDateKey 基準日 (通常は今日)
+ * @param futureMonthCount 何か月先まで追加するか
+ * @returns 年降順・月降順の集計 (基準日が不正な場合は元の集計のまま)
+ */
+export const arrayMergeUpcomingMonths = (
+  years: ScheduleYearSummary[],
+  baseDateKey: DateKey,
+  futureMonthCount: number,
+): ScheduleYearSummary[] => {
+  const base = dayjs(baseDateKey);
+  if (!base.isValid()) return years;
+
+  const counts = new Map<number, Map<number, number>>(
+    years.map((yearSummary) => [
+      yearSummary.year,
+      new Map(yearSummary.months.map((monthSummary) => [monthSummary.month, monthSummary.count])),
+    ]),
+  );
+  Array.from({ length: futureMonthCount + 1 }, (_, index) => base.startOf("month").add(index, "month")).forEach(
+    (target) => {
+      const month = target.month() + 1;
+      const monthCounts = counts.get(target.year()) ?? new Map<number, number>();
+      monthCounts.set(month, monthCounts.get(month) ?? 0);
+      counts.set(target.year(), monthCounts);
+    },
+  );
+  return sortScheduleYearSummaries(counts);
 };
 
 /**

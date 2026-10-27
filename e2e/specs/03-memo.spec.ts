@@ -48,19 +48,36 @@ test.describe("ダッシュボード (メモ入力・凡例テキスト)", () =>
     await expect(e2eToast(page, "のメモを保存しました")).toHaveCount(0);
   });
 
+  test("3か月先の月末より後の日付を入力して保存する__保存されずダイアログが開いたままになる", async ({ page }) => {
+    const dialog = await openMemoDialog(page);
+    const maxDateKey = dayjs().startOf("month").add(3, "month").endOf("month").format("YYYY-MM-DD");
+    await expect(dialog.locator("#memo-date")).toHaveAttribute("max", maxDateKey);
+
+    await dialog.locator("#memo-date").fill(dayjs(maxDateKey).add(1, "day").format("YYYY-MM-DD"));
+    await dialog.locator("#memo-content").fill("10:00〜");
+    await page.getByRole("button", { name: "保存する" }).click();
+
+    const isRangeOverflow = await dialog
+      .locator("#memo-date")
+      .evaluate((input: HTMLInputElement) => input.validity.rangeOverflow);
+    expect(isRangeOverflow).toBe(true);
+    await expect(dialog).toBeVisible();
+    await expect(e2eToast(page, "のメモを保存しました")).toHaveCount(0);
+  });
+
   test("空のメモを保存する__メモの入力を求めるエラーが表示される", async ({ page }) => {
     await saveMemo(page, e2eDateKeyAfter(1), "  \n ");
     await expect(e2eFieldError(page, "memo-content")).toHaveText("メモを入力してください");
   });
 
-  test("4行のメモを保存する__行数の上限エラーが表示される", async ({ page }) => {
-    await saveMemo(page, e2eDateKeyAfter(1), "10:00\n11:00\n13:00\n15:00");
-    await expect(e2eFieldError(page, "memo-content")).toHaveText("3行以内で入力してください");
+  test("6行のメモを保存する__行数の上限エラーが表示される", async ({ page }) => {
+    await saveMemo(page, e2eDateKeyAfter(1), "10:00\n11:00\n13:00\n15:00\n16:00\n17:00");
+    await expect(e2eFieldError(page, "memo-content")).toHaveText("5行以内で入力してください");
   });
 
-  test("1行16文字のメモを保存する__1行の文字数の上限エラーが表示される", async ({ page }) => {
-    await saveMemo(page, e2eDateKeyAfter(1), "1234567890123456");
-    await expect(e2eFieldError(page, "memo-content")).toHaveText("1行15文字以内で入力してください");
+  test("1行21文字のメモを保存する__1行の文字数の上限エラーが表示される", async ({ page }) => {
+    await saveMemo(page, e2eDateKeyAfter(1), "123456789012345678901");
+    await expect(e2eFieldError(page, "memo-content")).toHaveText("1行20文字以内で入力してください");
   });
 
   test("メモを保存する__保存のトーストが表示され次回は直前の日付が初期値になる", async ({ page }) => {

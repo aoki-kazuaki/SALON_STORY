@@ -38,7 +38,7 @@ const compressOrNull = async (file: File): Promise<File | null> => {
 
 /**
  * 背景画像スロット1枠分のカード
- * - 登録済み: 9:16 サムネイル ＋ 上書き変更・削除 (S3 / MinIO から物理削除)
+ * - 登録済み: 9:16 サムネイル ＋ 上書変更・削除 (S3 / MinIO から物理削除)
  * - 未登録: 点線枠 ＋ アップロードボタン
  * - アップロード前にブラウザ側で長辺 1920px・約1MB の JPEG に圧縮する (通信量・ストレージ料金の削減)
  */
@@ -128,7 +128,7 @@ const BackgroundsSlotCard = ({ slotNumber, slot, onChanged }: Props) => {
           <div className="grid grid-cols-2 gap-2">
             <CButton size="sm" variant="outline" disabled={isUploading} onClick={openFilePicker}>
               <ImageUpIcon />
-              上書き変更
+              上書変更
             </CButton>
             <CButton size="sm" variant="outline" disabled={isUploading} onClick={() => setIsDeleteDialogOpen(true)}>
               <Trash2Icon />

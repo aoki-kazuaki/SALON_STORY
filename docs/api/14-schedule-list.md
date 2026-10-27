@@ -28,7 +28,7 @@
 | 検索結果 | memos: [ | 配列 (始) | 省略不可 | 日付の昇順。該当なしは `[]` |
 | 　メモID | id | string | 省略不可 | |
 | 　対象日 | dateKey | string | 省略不可 | 日付キー |
-| 　メモ本文 | content | string | 省略不可 | 改行を含む (最大3行) |
+| 　メモ本文 | content | string | 省略不可 | 改行を含む (最大5行) |
 | 　最終更新日時 | updatedAt | string | 省略不可 | ISO 日時 |
 | - | ] | 配列 (終) | - | |
 

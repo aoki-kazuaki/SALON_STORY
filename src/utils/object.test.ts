@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { UNIT_TEST_BASE_DATE_KEY } from "@/constants/unitTest";
 
-import { objectBuildEditorRange, objectBuildMonthRange } from "./object";
+import { objectBuildEditorRange, objectBuildMonthRange, objectShiftYearMonth } from "./object";
 
 /** 選択状態の基本値 */
 const BASE_SELECTION = {
@@ -60,5 +60,16 @@ describe("objectBuildEditorRange", () => {
       startDate: "2026-10-25",
       endDate: "2026-11-07",
     });
+  });
+});
+
+describe("objectShiftYearMonth", () => {
+  it.each([
+    [2026, 10, 1, { year: 2026, month: 11 }],
+    [2026, 12, 1, { year: 2027, month: 1 }],
+    [2026, 1, -1, { year: 2025, month: 12 }],
+    [2026, 10, 3, { year: 2027, month: 1 }],
+  ])("%s年%s月を %i か月ずらす", (year, month, diff, expected) => {
+    expect(objectShiftYearMonth(year, month, diff)).toEqual(expected);
   });
 });

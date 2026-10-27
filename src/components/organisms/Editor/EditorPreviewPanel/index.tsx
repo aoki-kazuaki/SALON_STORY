@@ -2,6 +2,7 @@
 
 import { MaximizeIcon, TriangleAlertIcon } from "lucide-react";
 import { useState, type ComponentProps } from "react";
+import { toast } from "sonner";
 
 import CButton from "@/components/atoms/CButton";
 import StoryCanvas from "@/components/molecules/StoryCanvas";
@@ -16,10 +17,17 @@ type Props = {
 
 /**
  * プレビュー・保存タブ (キャンバス ＋ 全画面プレビュー導線)
- * - 自動縮小の下限でも収まりきらない場合は、表示できていない日がある旨を警告する
+ * - 自動縮小の下限でも収まりきらない場合に限り、表示できていない日がある旨をトースト ＋ 警告文で通知する
  */
 const EditorPreviewPanel = ({ canvas, onOpenFullscreen }: Props) => {
   const [isOverflowing, setIsOverflowing] = useState(false);
+
+  /** はみ出し状態の変化を受け取り、はみ出した瞬間だけトーストで知らせる */
+  const handleOverflowChange = (nextIsOverflowing: boolean) => {
+    setIsOverflowing(nextIsOverflowing);
+    if (!nextIsOverflowing) return;
+    toast.warning("1画面に入りきらない空き枠があります");
+  };
 
   return (
     <div className="grid justify-items-center gap-4">
@@ -29,11 +37,11 @@ const EditorPreviewPanel = ({ canvas, onOpenFullscreen }: Props) => {
           className="flex w-full max-w-[340px] items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900"
         >
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
-          空き枠が多すぎて、下の方の日付が1画面に表示しきれていません。「編集・選択」で表示する日のチェックを外すか、期間指定で日数を減らしてください。
+          文字を小さくしても、下の方の日付が1画面に表示しきれていません。「編集・選択」で表示する日のチェックを外す・期間指定で日数を減らす、またはメモの行数・文字数を減らしてください。
         </p>
       )}
       <div className="w-full max-w-[340px] overflow-hidden rounded-2xl shadow-xl">
-        <StoryCanvas {...canvas} onOverflowChange={setIsOverflowing} />
+        <StoryCanvas {...canvas} onOverflowChange={handleOverflowChange} />
       </div>
       <CButton size="lg" className="w-full max-w-[340px]" onClick={onOpenFullscreen}>
         <MaximizeIcon />
