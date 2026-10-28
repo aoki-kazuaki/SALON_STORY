@@ -37,6 +37,7 @@ const EditorPage = () => {
   const [slots, setSlots] = useState<BackgroundSlot[]>([]);
   const [legendText, setLegendText] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [operationBadges, setOperationBadges] = useState<Record<DateKey, ScheduleOperationBadge>>({});
 
   const rangeMode = useEditorStore((state) => state.rangeMode);
@@ -85,7 +86,17 @@ const EditorPage = () => {
   /** 抽出期間が確定しているかどうかの判定フラグ */
   const hasRange: boolean = !(todayKey === "") && !(range.startDate === "");
 
-  // 差分比較: 取得済みの抽出期間と同一なら通信せず、ローカルの State で即時描画する
+  // 画面を離れるときに「編集・選択」タブへ戻す
+  // (cacheComponents により遷移前の画面の State が保持されるため、再表示時にプレビューから始まらないようにする)
+  useEffect(
+    () => () => {
+      setActiveTab("edit");
+      setIsFullscreen(false);
+    },
+    [],
+  );
+
+  // 差分比較: 取得済みの抽出期間と同一なら通信せず、ローカルの State で即時描画する (編集・選択タブ用)
   useEffect(() => {
     if (!hasRange) return;
     if (fetchedRangeKey === rangeKey) return;
@@ -103,6 +114,35 @@ const EditorPage = () => {
     fetchMemos();
   }, [hasRange, fetchedRangeKey, rangeKey, range.startDate, range.endDate, setMemos]);
 
+  /**
+   * プレビュータブへ切り替える (「プレビューを見る」・タブのどちらからでも)
+   * - 他の画面・端末での更新を反映するため、差分比較を行わずメモと凡例テキストを最新の状態で取得し直してから切り替える
+   */
+  const openPreview = async () => {
+    setIsPreviewLoading(true);
+    const [schedule, legend] = await Promise.all([
+      apiGet<ResGetScheduleList>("/api/schedule/list", { startDate: range.startDate, endDate: range.endDate }),
+      apiGet<ResGetLegendDetail>("/api/legend/detail", {}),
+    ]);
+    setIsPreviewLoading(false);
+    if (legend.ok) setLegendText(legend.data.legend.content);
+    if (!schedule.ok) {
+      toast.error(schedule.error.message);
+      return;
+    }
+    setMemos(rangeKey, schedule.data.memos);
+    setActiveTab("preview");
+  };
+
+  /** タブ切り替え (プレビューへの切り替えは最新の状態を取得してから行う) */
+  const handleTabChange = (value: string) => {
+    if (value === "preview") {
+      openPreview();
+      return;
+    }
+    setActiveTab("edit");
+  };
+
   /** 空き枠リストで編集したメモを即時反映し、操作バッジを付与する (再取得の通信は行わない) */
   const handleMemoChanged = (memo: ScheduleMemo, badge: ScheduleOperationBadge) => {
     upsertMemo(rangeKey, memo);
@@ -111,6 +151,9 @@ const EditorPage = () => {
 
   /** メモを取得中かどうかの判定フラグ */
   const isMemoLoading: boolean = hasRange && !(fetchedRangeKey === rangeKey);
+  /** プレビューを開ける (抽出期間が確定し、最新状態の取得中でない) かどうかの判定フラグ */
+  const canOpenPreview: boolean = hasRange && !isPreviewLoading;
+  const previewButtonLabel = isPreviewLoading ? "最新の内容を読み込み中…" : "プレビューを見る";
   const visibleMemos = memos.filter((memo) => memo.dateKey >= range.startDate && memo.dateKey <= range.endDate);
   const backgroundImageUrl = stringResolveBackgroundUrl(slots, selectedSlotNumber, FALLBACK_BACKGROUND_IMAGE_URL);
   const canvas = {
@@ -127,7 +170,7 @@ const EditorPage = () => {
     >
       <CTabs
         value={activeTab}
-        onValueChange={(value) => setActiveTab(value as EditorTab)}
+        onValueChange={handleTabChange}
         items={[
           {
             value: "edit",
@@ -142,9 +185,9 @@ const EditorPage = () => {
                   onMemoChanged={handleMemoChanged}
                 />
                 <EditorBackgroundPicker slots={slots} activeImageUrl={backgroundImageUrl} />
-                <CButton size="lg" onClick={() => setActiveTab("preview")}>
+                <CButton size="lg" disabled={!canOpenPreview} onClick={openPreview}>
                   <EyeIcon />
-                  プレビューを見る
+                  {previewButtonLabel}
                 </CButton>
               </div>
             ),
